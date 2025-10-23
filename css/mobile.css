@@ -917,3 +917,36 @@ body.mobile-view #notification.show {
 body.mobile-view .debug-info {
     display: none;
 }
+
+/* Mobile Modal Adjustments */
+body.mobile-view .modal-dialog {
+    max-width: 94%;
+    width: 94%;
+}
+
+body.mobile-view .modal-header {
+    padding: 20px 24px;
+}
+
+body.mobile-view .modal-title {
+    font-size: 18px;
+}
+
+body.mobile-view .modal-body {
+    padding: 24px;
+}
+
+body.mobile-view .modal-footer {
+    padding: 16px 24px;
+    flex-direction: column;
+}
+
+body.mobile-view .modal-btn {
+    width: 100%;
+    padding: 14px 24px;
+}
+
+body.mobile-view .modal-input {
+    padding: 12px 16px;
+    font-size: 16px;
+}
