@@ -55,6 +55,11 @@ const dom = {
     currentPlaylistName: document.getElementById("currentPlaylistName"),
     createPlaylistBtn: document.getElementById("createPlaylistBtn"),
     deletePlaylistBtn: document.getElementById("deletePlaylistBtn"),
+    modalOverlay: document.getElementById("modalOverlay"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalBody: document.getElementById("modalBody"),
+    modalFooter: document.getElementById("modalFooter"),
+    modalClose: document.getElementById("modalClose"),
 };
 
 window.SolaraDom = dom;
@@ -1554,18 +1559,129 @@ function selectPlaylistById(playlistId) {
     closePlaylistDropdown();
 }
 
-function promptForPlaylistName(defaultValue = "") {
-    const baseName = defaultValue || `播放列表 ${Array.isArray(state.playlists) ? state.playlists.length + 1 : 1}`;
-    const result = window.prompt("请输入播放列表名称", baseName);
-    if (result === null) {
-        return null;
+function openModal(title, bodyHtml, buttons = []) {
+    if (!dom.modalOverlay || !dom.modalTitle || !dom.modalBody || !dom.modalFooter) {
+        return;
     }
-    return sanitizePlaylistName(result, baseName);
+    
+    dom.modalTitle.textContent = title;
+    dom.modalBody.innerHTML = bodyHtml;
+    
+    dom.modalFooter.innerHTML = '';
+    buttons.forEach(btn => {
+        const button = document.createElement('button');
+        button.className = `modal-btn ${btn.className || 'modal-btn-secondary'}`;
+        button.textContent = btn.text;
+        button.onclick = () => {
+            if (btn.onClick) {
+                btn.onClick();
+            }
+            closeModal();
+        };
+        dom.modalFooter.appendChild(button);
+    });
+    
+    dom.modalOverlay.classList.add('show');
+    
+    const firstInput = dom.modalBody.querySelector('input, textarea');
+    if (firstInput) {
+        setTimeout(() => firstInput.focus(), 100);
+    }
 }
 
-function handleCreatePlaylist() {
+function closeModal() {
+    if (!dom.modalOverlay) {
+        return;
+    }
+    dom.modalOverlay.classList.remove('show');
+}
+
+function promptForPlaylistName(defaultValue = "") {
+    return new Promise((resolve) => {
+        const suggestedName = defaultValue || `播放列表 ${Array.isArray(state.playlists) ? state.playlists.length + 1 : 1}`;
+        
+        const bodyHtml = `
+            <div>
+                <label class="modal-label" for="playlistNameInput">播放列表名称</label>
+                <input 
+                    type="text" 
+                    id="playlistNameInput" 
+                    class="modal-input" 
+                    placeholder="请输入播放列表名称" 
+                    value="${escapeHtml(suggestedName)}"
+                    maxlength="${MAX_PLAYLIST_NAME_LENGTH}"
+                />
+            </div>
+        `;
+        
+        const buttons = [
+            {
+                text: '取消',
+                className: 'modal-btn-secondary',
+                onClick: () => resolve(null)
+            },
+            {
+                text: '创建',
+                className: 'modal-btn-primary',
+                onClick: () => {
+                    const input = document.getElementById('playlistNameInput');
+                    const value = input ? input.value : suggestedName;
+                    resolve(sanitizePlaylistName(value, suggestedName));
+                }
+            }
+        ];
+        
+        openModal('新建播放列表', bodyHtml, buttons);
+        
+        setTimeout(() => {
+            const input = document.getElementById('playlistNameInput');
+            if (input) {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const value = input.value;
+                        closeModal();
+                        resolve(sanitizePlaylistName(value, suggestedName));
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        closeModal();
+                        resolve(null);
+                    }
+                });
+            }
+        }, 100);
+    });
+}
+
+function confirmDeletePlaylist(playlistName) {
+    return new Promise((resolve) => {
+        const bodyHtml = `
+            <div class="modal-message">
+                确定删除播放列表 <strong>「${escapeHtml(playlistName)}」</strong> 吗？<br><br>
+                此操作不可恢复。
+            </div>
+        `;
+        
+        const buttons = [
+            {
+                text: '取消',
+                className: 'modal-btn-secondary',
+                onClick: () => resolve(false)
+            },
+            {
+                text: '删除',
+                className: 'modal-btn-danger',
+                onClick: () => resolve(true)
+            }
+        ];
+        
+        openModal('删除播放列表', bodyHtml, buttons);
+    });
+}
+
+async function handleCreatePlaylist() {
     const suggestedName = `播放列表 ${Array.isArray(state.playlists) ? state.playlists.length + 1 : 1}`;
-    const name = promptForPlaylistName(suggestedName);
+    const name = await promptForPlaylistName(suggestedName);
     if (name === null) {
         return;
     }
@@ -1584,7 +1700,7 @@ function handleCreatePlaylist() {
     showNotification(`已创建播放列表：${playlist.name}`, "success");
 }
 
-function handleDeletePlaylist() {
+async function handleDeletePlaylist() {
     const playlist = getCurrentPlaylist();
     if (!playlist) {
         return;
@@ -1593,7 +1709,7 @@ function handleDeletePlaylist() {
         showNotification("至少需要保留一个播放列表", "error");
         return;
     }
-    const confirmed = window.confirm(`确定删除播放列表「${playlist.name}」吗？此操作不可恢复。`);
+    const confirmed = await confirmDeletePlaylist(playlist.name);
     if (!confirmed) {
         return;
     }
@@ -3002,6 +3118,20 @@ async function setupInteractions() {
             handleDeletePlaylist();
         });
     }
+    if (dom.modalClose) {
+        dom.modalClose.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            closeModal();
+        });
+    }
+    if (dom.modalOverlay) {
+        dom.modalOverlay.addEventListener("click", (event) => {
+            if (event.target === dom.modalOverlay) {
+                closeModal();
+            }
+        });
+    }
     updateQualityLabel();
     updatePlayPauseButton();
     dom.currentTimeDisplay.textContent = formatTime(state.currentPlaybackTime);
@@ -3105,6 +3235,10 @@ async function setupInteractions() {
     });
 
     document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && dom.modalOverlay && dom.modalOverlay.classList.contains("show")) {
+            closeModal();
+            return;
+        }
         if (e.key === "Escape" && state.sourceMenuOpen) {
             closeSourceMenu();
         }
