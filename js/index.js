@@ -3078,7 +3078,7 @@ async function setupInteractions() {
     captureThemeDefaults();
     const savedTheme = safeGetLocalStorage("theme");
     const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialIsDark = savedTheme ? savedTheme === "dark" : prefersDark;
+    const initialIsDark = savedTheme ? savedTheme === "dark" : (savedTheme === null ? true : prefersDark);
     applyTheme(initialIsDark);
 
     dom.themeToggleButton.addEventListener("click", () => {
