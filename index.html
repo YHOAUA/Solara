@@ -169,8 +169,45 @@
 
                 <div class="playlist active empty" id="playlist">
                     <div class="playlist-header">
-                        <div class="playlist-label" aria-hidden="true">播放列表</div>
+                        <div class="playlist-selector">
+                            <button
+                                id="playlistDropdownToggle"
+                                class="playlist-dropdown-toggle"
+                                type="button"
+                                aria-haspopup="listbox"
+                                aria-expanded="false"
+                                title="选择播放列表"
+                                aria-label="选择播放列表"
+                            >
+                                <span id="currentPlaylistName" class="playlist-dropdown-toggle__label">默认列表</span>
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                            </button>
+                            <div
+                                id="playlistDropdownMenu"
+                                class="playlist-dropdown-menu"
+                                role="listbox"
+                                aria-labelledby="playlistDropdownToggle"
+                            ></div>
+                        </div>
                         <div class="playlist-header-actions">
+                            <button
+                                class="playlist-action-btn"
+                                id="createPlaylistBtn"
+                                type="button"
+                                title="新建播放列表"
+                                aria-label="新建播放列表"
+                            >
+                                <i class="fas fa-plus" aria-hidden="true"></i>
+                            </button>
+                            <button
+                                class="playlist-action-btn"
+                                id="deletePlaylistBtn"
+                                type="button"
+                                title="删除当前播放列表"
+                                aria-label="删除当前播放列表"
+                            >
+                                <i class="fas fa-trash-can" aria-hidden="true"></i>
+                            </button>
                             <button
                                 class="playlist-sync-btn"
                                 id="playlistSyncBtn"
@@ -185,10 +222,10 @@
                                 class="clear-playlist-btn"
                                 id="clearPlaylistBtn"
                                 onclick="clearPlaylist()"
-                                title="清空播放列表"
-                                aria-label="清空播放列表"
+                                title="清空播放列表内容"
+                                aria-label="清空播放列表内容"
                             >
-                                <i class="fas fa-trash"></i>
+                                <i class="fas fa-broom" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
