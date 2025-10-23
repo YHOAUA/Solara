@@ -1013,12 +1013,7 @@ html.mobile-view .playlist-label {
     transform: translateY(0); 
     box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
 }
-.controls button#loadOnlineBtn { 
-    width: auto; 
-    border-radius: 25px; 
-    padding: 0 25px; 
-    gap: 10px; 
-}
+
 .controls button:disabled { 
     background: var(--text-secondary-color); 
     cursor: not-allowed; 
