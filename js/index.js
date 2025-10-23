@@ -52,11 +52,6 @@ const dom = {
     searchArea: document.getElementById("searchArea"),
     playlistSyncStatus: document.getElementById("playlistSyncStatus"),
     playlistSyncBtn: document.getElementById("playlistSyncBtn"),
-    playlistDropdownToggle: document.getElementById("playlistDropdownToggle"),
-    playlistDropdownMenu: document.getElementById("playlistDropdownMenu"),
-    currentPlaylistName: document.getElementById("currentPlaylistName"),
-    createPlaylistBtn: document.getElementById("createPlaylistBtn"),
-    deletePlaylistBtn: document.getElementById("deletePlaylistBtn"),
 };
 
 window.SolaraDom = dom;
@@ -399,134 +394,6 @@ const playlistSync = {
     error: null,
     notifiedError: false,
 };
-
-const PLAYLISTS_STORAGE_KEY = "multiPlaylists.v1";
-const CURRENT_PLAYLIST_ID_STORAGE_KEY = "currentPlaylistId.v1";
-const DEFAULT_PLAYLIST_NAME = "默认列表";
-const MAX_PLAYLIST_NAME_LENGTH = 36;
-
-function generatePlaylistId() {
-    return `pl-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function sanitizePlaylistName(name, fallback = DEFAULT_PLAYLIST_NAME) {
-    if (typeof name !== "string") {
-        return fallback;
-    }
-    const trimmed = name.trim().slice(0, MAX_PLAYLIST_NAME_LENGTH);
-    return trimmed || fallback;
-}
-
-function normalizeSongEntry(song) {
-    if (!song || typeof song !== "object") {
-        return null;
-    }
-    const normalized = { ...song };
-    if (normalized.source) {
-        normalized.source = String(normalized.source);
-    }
-    return normalized;
-}
-
-function normalizeSongsCollection(songs) {
-    if (!Array.isArray(songs)) {
-        return [];
-    }
-    const normalized = [];
-    for (const song of songs) {
-        const entry = normalizeSongEntry(song);
-        if (entry) {
-            normalized.push(entry);
-        }
-    }
-    return normalized;
-}
-
-function createPlaylist(name = DEFAULT_PLAYLIST_NAME, songs = []) {
-    return {
-        id: generatePlaylistId(),
-        name: sanitizePlaylistName(name),
-        songs: normalizeSongsCollection(songs),
-    };
-}
-
-function normalizeStoredPlaylist(raw, fallbackName = DEFAULT_PLAYLIST_NAME) {
-    if (!raw || typeof raw !== "object") {
-        return null;
-    }
-    const id = typeof raw.id === "string" && raw.id.trim() ? raw.id.trim() : generatePlaylistId();
-    return {
-        id,
-        name: sanitizePlaylistName(raw.name, fallbackName),
-        songs: normalizeSongsCollection(raw.songs),
-    };
-}
-
-const legacyPlaylistSongs = (() => {
-    const stored = safeGetLocalStorage("playlistSongs");
-    const playlist = parseJSON(stored, []);
-    return normalizeSongsCollection(playlist);
-})();
-
-const savedPlaylists = (() => {
-    const stored = safeGetLocalStorage(PLAYLISTS_STORAGE_KEY);
-    const parsed = parseJSON(stored, null);
-    const normalized = Array.isArray(parsed)
-        ? parsed.map(item => normalizeStoredPlaylist(item)).filter(Boolean)
-        : [];
-    if (normalized.length > 0) {
-        return normalized;
-    }
-    return [
-        {
-            id: "default",
-            name: DEFAULT_PLAYLIST_NAME,
-            songs: legacyPlaylistSongs.slice(),
-        },
-    ];
-})();
-
-const savedCurrentPlaylistId = (() => {
-    const stored = safeGetLocalStorage(CURRENT_PLAYLIST_ID_STORAGE_KEY);
-    if (typeof stored === "string") {
-        const trimmed = stored.trim();
-        if (trimmed && savedPlaylists.some(playlist => playlist.id === trimmed)) {
-            return trimmed;
-        }
-    }
-    return savedPlaylists.length > 0 ? savedPlaylists[0].id : null;
-})();
-
-function isSameSong(a, b) {
-    if (!a || !b) {
-        return false;
-    }
-    const leftSource = a.source || "netease";
-    const rightSource = b.source || "netease";
-    return a.id === b.id && leftSource === rightSource;
-}
-
-function findSongIndex(songs, targetSong) {
-    if (!Array.isArray(songs) || !targetSong) {
-        return -1;
-    }
-    return songs.findIndex(song => isSameSong(song, targetSong));
-}
-
-const HTML_ESCAPE_MAP = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-};
-
-function escapeHtml(value) {
-    if (typeof value !== "string") {
-        return "";
-    }
-    return value.replace(/[&<>"']/g, match => HTML_ESCAPE_MAP[match] || match);
-}
 
 let isRestoringPlaylistFromRemote = false;
 
@@ -997,7 +864,7 @@ function applyRemotePlaylist(payload, snapshotString) {
     const normalized = normalizeRemotePlaylist(payload);
     isRestoringPlaylistFromRemote = true;
     try {
-        setCurrentPlaylistSongs(normalized.songs);
+        state.playlistSongs = normalized.songs;
         state.currentTrackIndex = normalized.currentTrackIndex;
         state.playMode = normalized.playMode;
         state.playbackQuality = normalized.playbackQuality;
@@ -1015,7 +882,7 @@ function applyRemotePlaylist(payload, snapshotString) {
                 updateVolumeIcon(normalized.volume);
             }
         }
-        renderPlaylist();
+        savePlayerState();
     } finally {
         isRestoringPlaylistFromRemote = false;
     }
@@ -1165,6 +1032,12 @@ function normalizeQuality(value) {
     const match = QUALITY_OPTIONS.find(option => option.value === value);
     return match ? match.value : "320";
 }
+
+const savedPlaylistSongs = (() => {
+    const stored = safeGetLocalStorage("playlistSongs");
+    const playlist = parseJSON(stored, []);
+    return Array.isArray(playlist) ? playlist : [];
+})();
 
 const savedCurrentTrackIndex = (() => {
     const stored = safeGetLocalStorage("currentTrackIndex");
@@ -1342,24 +1215,6 @@ const API = {
 
 Object.freeze(API);
 
-const initialPlaylists = savedPlaylists.map(playlist => ({
-    id: playlist.id,
-    name: playlist.name,
-    songs: Array.isArray(playlist.songs) ? playlist.songs.slice() : [],
-}));
-
-const normalizedCurrentPlaylistId = (() => {
-    if (savedCurrentPlaylistId && initialPlaylists.some(item => item.id === savedCurrentPlaylistId)) {
-        return savedCurrentPlaylistId;
-    }
-    return initialPlaylists[0]?.id || null;
-})();
-
-const initialPlaylistSongs = (() => {
-    const active = initialPlaylists.find(item => item.id === normalizedCurrentPlaylistId);
-    return active ? active.songs : [];
-})();
-
 const state = {
     onlineSongs: [],
     searchResults: [],
@@ -1374,11 +1229,9 @@ const state = {
     searchSource: savedSearchSource,
     hasMoreResults: true,
     currentSong: savedCurrentSong,
-    playlists: initialPlaylists,
-    currentPlaylistId: normalizedCurrentPlaylistId,
     debugMode: false,
     isSearchMode: false, // 新增：搜索模式状态
-    playlistSongs: initialPlaylistSongs,
+    playlistSongs: savedPlaylistSongs, // 新增：统一播放列表
     playMode: savedPlayMode, // 新增：播放模式 'list', 'single', 'random'
     playbackQuality: savedPlaybackQuality,
     volume: savedVolume,
@@ -1402,302 +1255,10 @@ const state = {
     isMobileInlineLyricsOpen: false,
 };
 
-function getPlaylistById(id) {
-    if (!Array.isArray(state.playlists) || state.playlists.length === 0 || !id) {
-        return null;
-    }
-    return state.playlists.find(playlist => playlist.id === id) || null;
-}
-
-function getCurrentPlaylist() {
-    if (!Array.isArray(state.playlists) || state.playlists.length === 0) {
-        return null;
-    }
-    const playlist = getPlaylistById(state.currentPlaylistId) || state.playlists[0];
-    return playlist || null;
-}
-
-function ensureCurrentPlaylistReference() {
-    if (!Array.isArray(state.playlists) || state.playlists.length === 0) {
-        const fallback = createPlaylist(DEFAULT_PLAYLIST_NAME, []);
-        state.playlists = [fallback];
-        state.currentPlaylistId = fallback.id;
-        state.playlistSongs = fallback.songs;
-        return fallback;
-    }
-    const playlist = getCurrentPlaylist();
-    state.currentPlaylistId = playlist.id;
-    state.playlistSongs = playlist.songs;
-    return playlist;
-}
-
-function setCurrentPlaylistSongs(songs) {
-    const target = ensureCurrentPlaylistReference();
-    const normalizedSongs = normalizeSongsCollection(songs);
-    target.songs = normalizedSongs;
-    state.playlistSongs = target.songs;
-}
-
-function clampCurrentTrackIndexWithinPlaylist() {
-    const songs = Array.isArray(state.playlistSongs) ? state.playlistSongs : [];
-    if (songs.length === 0) {
-        state.currentTrackIndex = -1;
-        return;
-    }
-    if (!Number.isInteger(state.currentTrackIndex) || state.currentTrackIndex < 0) {
-        state.currentTrackIndex = 0;
-        return;
-    }
-    if (state.currentTrackIndex >= songs.length) {
-        state.currentTrackIndex = songs.length - 1;
-    }
-}
-
-function persistPlaylistsState() {
-    try {
-        const serialized = JSON.stringify(Array.isArray(state.playlists)
-            ? state.playlists.map(playlist => ({
-                id: playlist.id,
-                name: sanitizePlaylistName(playlist.name, DEFAULT_PLAYLIST_NAME),
-                songs: Array.isArray(playlist.songs) ? playlist.songs : [],
-            }))
-            : []);
-        safeSetLocalStorage(PLAYLISTS_STORAGE_KEY, serialized);
-    } catch (error) {
-        console.warn("保存播放列表失败", error);
-    }
-    if (state.currentPlaylistId) {
-        safeSetLocalStorage(CURRENT_PLAYLIST_ID_STORAGE_KEY, state.currentPlaylistId);
-    } else {
-        safeRemoveLocalStorage(CURRENT_PLAYLIST_ID_STORAGE_KEY);
-    }
-}
-
-ensureCurrentPlaylistReference();
-clampCurrentTrackIndexWithinPlaylist();
-
 let sourceMenuPositionFrame = null;
 let qualityMenuPositionFrame = null;
 let floatingMenuListenersAttached = false;
 let qualityMenuAnchor = null;
-let playlistDropdownOpen = false;
-let playlistDropdownOutsideHandler = null;
-
-function buildPlaylistDropdownMenu() {
-    if (!dom.playlistDropdownMenu) {
-        return;
-    }
-    const playlists = Array.isArray(state.playlists) ? state.playlists : [];
-    if (playlists.length === 0) {
-        dom.playlistDropdownMenu.innerHTML = '<div class="playlist-dropdown-empty">暂无播放列表</div>';
-        return;
-    }
-    const itemsHtml = playlists.map(playlist => {
-        const isActive = playlist.id === state.currentPlaylistId;
-        const count = Array.isArray(playlist.songs) ? playlist.songs.length : 0;
-        return `
-            <button type="button" class="playlist-dropdown-item${isActive ? " active" : ""}" data-playlist-id="${escapeHtml(playlist.id)}">
-                <span class="playlist-dropdown-item__name">${escapeHtml(playlist.name)}</span>
-                <span class="playlist-dropdown-item__meta">${count} 首</span>
-                ${isActive ? '<i class="fas fa-check" aria-hidden="true"></i>' : ""}
-            </button>
-        `;
-    }).join("");
-    dom.playlistDropdownMenu.innerHTML = itemsHtml;
-}
-
-function updatePlaylistSelectorUI() {
-    const playlist = ensureCurrentPlaylistReference();
-    if (dom.currentPlaylistName) {
-        dom.currentPlaylistName.textContent = playlist ? playlist.name : DEFAULT_PLAYLIST_NAME;
-    }
-    if (dom.playlistDropdownToggle) {
-        const label = playlist ? `当前播放列表：${playlist.name}` : "选择播放列表";
-        dom.playlistDropdownToggle.setAttribute("aria-label", label);
-        dom.playlistDropdownToggle.setAttribute("title", label);
-        dom.playlistDropdownToggle.setAttribute("aria-expanded", playlistDropdownOpen ? "true" : "false");
-    }
-    if (dom.deletePlaylistBtn) {
-        const disableDelete = !Array.isArray(state.playlists) || state.playlists.length <= 1;
-        dom.deletePlaylistBtn.disabled = disableDelete;
-        dom.deletePlaylistBtn.setAttribute("aria-disabled", disableDelete ? "true" : "false");
-    }
-    buildPlaylistDropdownMenu();
-}
-
-function openPlaylistDropdown() {
-    if (!dom.playlistDropdownMenu || !dom.playlistDropdownToggle) {
-        return;
-    }
-    if (playlistDropdownOpen) {
-        return;
-    }
-    ensureCurrentPlaylistReference();
-    buildPlaylistDropdownMenu();
-    dom.playlistDropdownMenu.classList.add("show");
-    dom.playlistDropdownToggle.setAttribute("aria-expanded", "true");
-    playlistDropdownOpen = true;
-    playlistDropdownOutsideHandler = (event) => {
-        if (!playlistDropdownOpen) {
-            return;
-        }
-        const target = event.target;
-        if ((dom.playlistDropdownMenu && dom.playlistDropdownMenu.contains(target)) ||
-            (dom.playlistDropdownToggle && dom.playlistDropdownToggle.contains(target))) {
-            return;
-        }
-        closePlaylistDropdown();
-    };
-    document.addEventListener("pointerdown", playlistDropdownOutsideHandler, true);
-}
-
-function closePlaylistDropdown() {
-    if (!playlistDropdownOpen) {
-        return;
-    }
-    if (dom.playlistDropdownMenu) {
-        dom.playlistDropdownMenu.classList.remove("show");
-    }
-    if (dom.playlistDropdownToggle) {
-        dom.playlistDropdownToggle.setAttribute("aria-expanded", "false");
-    }
-    playlistDropdownOpen = false;
-    if (playlistDropdownOutsideHandler) {
-        document.removeEventListener("pointerdown", playlistDropdownOutsideHandler, true);
-        playlistDropdownOutsideHandler = null;
-    }
-}
-
-function togglePlaylistDropdown(event) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    if (playlistDropdownOpen) {
-        closePlaylistDropdown();
-    } else {
-        openPlaylistDropdown();
-    }
-}
-
-function handlePlaylistDropdownSelection(event) {
-    const option = event.target.closest("[data-playlist-id]");
-    if (!option) {
-        return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    const { playlistId } = option.dataset;
-    if (playlistId) {
-        selectPlaylistById(playlistId);
-    }
-}
-
-function selectPlaylistById(playlistId) {
-    const playlist = getPlaylistById(playlistId);
-    if (!playlist || playlist.id === state.currentPlaylistId) {
-        closePlaylistDropdown();
-        return;
-    }
-    state.currentPlaylistId = playlist.id;
-    state.playlistSongs = playlist.songs;
-    state.currentPlaylist = "playlist";
-    const matchedIndex = findSongIndex(playlist.songs, state.currentSong);
-    state.currentTrackIndex = matchedIndex >= 0 ? matchedIndex : (playlist.songs.length > 0 ? 0 : -1);
-    renderPlaylist();
-    updateMobileClearPlaylistVisibility();
-    showNotification(`已切换到播放列表：${playlist.name}`);
-    closePlaylistDropdown();
-}
-
-function promptForPlaylistName(defaultValue = "") {
-    const baseName = defaultValue || `播放列表 ${Array.isArray(state.playlists) ? state.playlists.length + 1 : 1}`;
-    const result = window.prompt("请输入播放列表名称", baseName);
-    if (result === null) {
-        return null;
-    }
-    return sanitizePlaylistName(result, baseName);
-}
-
-function handleCreatePlaylist() {
-    const suggestedName = `播放列表 ${Array.isArray(state.playlists) ? state.playlists.length + 1 : 1}`;
-    const name = promptForPlaylistName(suggestedName);
-    if (name === null) {
-        return;
-    }
-    const playlist = createPlaylist(name, []);
-    if (!Array.isArray(state.playlists)) {
-        state.playlists = [];
-    }
-    state.playlists.push(playlist);
-    state.currentPlaylistId = playlist.id;
-    state.playlistSongs = playlist.songs;
-    state.currentPlaylist = "playlist";
-    state.currentTrackIndex = -1;
-    renderPlaylist();
-    updateMobileClearPlaylistVisibility();
-    closePlaylistDropdown();
-    showNotification(`已创建播放列表：${playlist.name}`, "success");
-}
-
-function handleDeletePlaylist() {
-    const playlist = getCurrentPlaylist();
-    if (!playlist) {
-        return;
-    }
-    if (!Array.isArray(state.playlists) || state.playlists.length <= 1) {
-        showNotification("至少需要保留一个播放列表", "error");
-        return;
-    }
-    const confirmed = window.confirm(`确定删除播放列表「${playlist.name}」吗？此操作不可恢复。`);
-    if (!confirmed) {
-        return;
-    }
-    const playlistIndex = state.playlists.findIndex(item => item.id === playlist.id);
-    if (playlistIndex === -1) {
-        return;
-    }
-    const wasPlayingFromPlaylist = state.currentPlaylist === "playlist" && findSongIndex(playlist.songs, state.currentSong) !== -1;
-    state.playlists.splice(playlistIndex, 1);
-    if (state.playlists.length === 0) {
-        const fallback = createPlaylist(DEFAULT_PLAYLIST_NAME, []);
-        state.playlists.push(fallback);
-    }
-    const nextPlaylist = state.playlists[playlistIndex] || state.playlists[playlistIndex - 1] || state.playlists[0];
-    state.currentPlaylistId = nextPlaylist.id;
-    state.playlistSongs = nextPlaylist.songs;
-    state.currentPlaylist = "playlist";
-    if (wasPlayingFromPlaylist) {
-        dom.audioPlayer.pause();
-        dom.audioPlayer.src = "";
-        state.currentSong = null;
-        state.currentAudioUrl = null;
-        state.currentTrackIndex = -1;
-        state.currentPlaybackTime = 0;
-        state.lastSavedPlaybackTime = 0;
-        dom.progressBar.value = 0;
-        dom.progressBar.max = 0;
-        dom.currentTimeDisplay.textContent = "00:00";
-        dom.durationDisplay.textContent = "00:00";
-        updateProgressBarBackground(0, 1);
-        dom.currentSongTitle.textContent = "选择一首歌曲开始播放";
-        updateMobileToolbarTitle();
-        dom.currentSongArtist.textContent = "未知艺术家";
-        showAlbumCoverPlaceholder();
-        clearLyricsContent();
-        if (dom.lyrics) {
-            dom.lyrics.dataset.placeholder = "default";
-            dom.lyrics.classList.add("empty");
-        }
-        updatePlayPauseButton();
-    } else {
-        clampCurrentTrackIndexWithinPlaylist();
-    }
-    renderPlaylist();
-    updateMobileClearPlaylistVisibility();
-    closePlaylistDropdown();
-    showNotification(`已删除播放列表：${playlist.name}`, "success");
-}
 
 function runWithoutTransition(element, callback) {
     if (!element || typeof callback !== "function") return;
@@ -2201,7 +1762,6 @@ function savePlayerState() {
         safeSetLocalStorage("currentSong", "");
     }
     safeSetLocalStorage("currentPlaybackTime", String(state.currentPlaybackTime || 0));
-    persistPlaylistsState();
 
     const snapshot = computePlaylistSyncSnapshot();
     if (isRestoringPlaylistFromRemote) {
@@ -3037,27 +2597,6 @@ async function setupInteractions() {
     buildQualityMenu();
     ensureQualityMenuPortal();
     initializePlaylistEventHandlers();
-    updatePlaylistSelectorUI();
-    if (dom.playlistDropdownToggle) {
-        dom.playlistDropdownToggle.addEventListener("click", togglePlaylistDropdown);
-    }
-    if (dom.playlistDropdownMenu) {
-        dom.playlistDropdownMenu.addEventListener("click", handlePlaylistDropdownSelection);
-    }
-    if (dom.createPlaylistBtn) {
-        dom.createPlaylistBtn.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            handleCreatePlaylist();
-        });
-    }
-    if (dom.deletePlaylistBtn) {
-        dom.deletePlaylistBtn.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            handleDeletePlaylist();
-        });
-    }
     updateQualityLabel();
     updatePlayPauseButton();
     dom.currentTimeDisplay.textContent = formatTime(state.currentPlaybackTime);
@@ -3173,9 +2712,6 @@ async function setupInteractions() {
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && state.sourceMenuOpen) {
             closeSourceMenu();
-        }
-        if (e.key === "Escape" && playlistDropdownOpen) {
-            closePlaylistDropdown();
         }
         if (isMobileView && e.key === "Escape") {
             closeAllMobileOverlays();
@@ -3765,15 +3301,9 @@ async function playSearchResult(index) {
 
 // 新增：渲染统一播放列表
 function renderPlaylist() {
-    if (!dom.playlistItems || !dom.playlist) {
-        return;
-    }
+    if (!dom.playlistItems) return;
 
-    ensureCurrentPlaylistReference();
-    const songs = Array.isArray(state.playlistSongs) ? state.playlistSongs : [];
-    updatePlaylistSelectorUI();
-
-    if (songs.length === 0) {
+    if (state.playlistSongs.length === 0) {
         dom.playlist.classList.add("empty");
         dom.playlistItems.innerHTML = "";
         savePlayerState();
@@ -3783,28 +3313,17 @@ function renderPlaylist() {
     }
 
     dom.playlist.classList.remove("empty");
-    const playlistHtml = songs.map((song, index) => {
-        const songTitle = escapeHtml(song?.name || "未知歌曲");
-        const artistLabel = Array.isArray(song?.artist)
-            ? escapeHtml(song.artist.join(", "))
-            : escapeHtml(song?.artist || "未知艺术家");
-        return `
-            <div class="playlist-item" data-index="${index}" role="button" tabindex="0" aria-label="播放 ${songTitle}">
-                <div class="playlist-item__info">
-                    <span class="playlist-item__title">${songTitle}</span>
-                    <span class="playlist-item__artist">${artistLabel}</span>
-                </div>
-                <div class="playlist-item__actions">
-                    <button class="playlist-item-download" type="button" data-playlist-action="download" data-index="${index}" title="下载">
-                        <i class="fas fa-download" aria-hidden="true"></i>
-                    </button>
-                    <button class="playlist-item-remove" type="button" data-playlist-action="remove" data-index="${index}" title="从播放列表移除">
-                        <i class="fas fa-xmark" aria-hidden="true"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join("");
+    const playlistHtml = state.playlistSongs.map((song, index) =>
+        `<div class="playlist-item" data-index="${index}" role="button" tabindex="0" aria-label="播放 ${song.name}">
+            ${song.name} - ${Array.isArray(song.artist) ? song.artist.join(", ") : song.artist}
+            <button class="playlist-item-remove" type="button" data-playlist-action="remove" data-index="${index}" title="从播放列表移除">
+                <i class="fas fa-times"></i>
+            </button>
+            <button class="playlist-item-download" type="button" data-playlist-action="download" data-index="${index}" title="下载">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>`
+    ).join("");
 
     dom.playlistItems.innerHTML = playlistHtml;
     savePlayerState();
@@ -3850,33 +3369,37 @@ function removeFromPlaylist(index) {
     }
 
     state.playlistSongs.splice(index, 1);
-    if (state.currentPlaylist === "playlist" && state.currentTrackIndex < 0) {
-        state.currentTrackIndex = state.playlistSongs.length > 0 ? 0 : -1;
-    }
 
     if (state.playlistSongs.length === 0) {
+        dom.playlist.classList.add("empty");
+        if (dom.playlistItems) {
+            dom.playlistItems.innerHTML = "";
+        }
         state.currentPlaylist = "playlist";
-    }
-
-    renderPlaylist();
-
-    if (removingCurrent && state.currentPlaylist === "playlist" && state.playlistSongs.length > 0) {
-        const targetIndex = Math.min(Math.max(state.currentTrackIndex, 0), state.playlistSongs.length - 1);
-        state.currentTrackIndex = targetIndex;
-        playPlaylistSong(targetIndex);
+        updateMobileClearPlaylistVisibility();
     } else {
-        updatePlaylistHighlight();
+        if (state.currentPlaylist === "playlist" && state.currentTrackIndex < 0) {
+            state.currentTrackIndex = 0;
+        }
+
+        renderPlaylist();
+
+        if (removingCurrent && state.currentPlaylist === "playlist" && state.currentTrackIndex >= 0) {
+            const targetIndex = Math.min(state.currentTrackIndex, state.playlistSongs.length - 1);
+            state.currentTrackIndex = targetIndex;
+            playPlaylistSong(targetIndex);
+        } else {
+            updatePlaylistHighlight();
+        }
     }
 
+    savePlayerState();
     showNotification("已从播放列表移除", "success");
 }
 
 // 新增：清空播放列表
 function clearPlaylist() {
-    const playlist = ensureCurrentPlaylistReference();
-    if (!playlist || playlist.songs.length === 0) {
-        return;
-    }
+    if (state.playlistSongs.length === 0) return;
 
     if (state.currentPlaylist === "playlist") {
         dom.audioPlayer.pause();
@@ -3903,12 +3426,15 @@ function clearPlaylist() {
         updatePlayPauseButton();
     }
 
-    playlist.songs.length = 0;
-    state.playlistSongs = playlist.songs;
+    state.playlistSongs = [];
+    dom.playlist.classList.add("empty");
+    if (dom.playlistItems) {
+        dom.playlistItems.innerHTML = "";
+    }
     state.currentPlaylist = "playlist";
-
-    renderPlaylist();
     updateMobileClearPlaylistVisibility();
+
+    savePlayerState();
     showNotification("播放列表已清空", "success");
 }
 
@@ -4266,7 +3792,7 @@ async function exploreOnlineMusic() {
 
         if (songs.length > 0) {
             // 将在线音乐添加到统一播放列表
-            state.playlistSongs.push(...songs);
+            state.playlistSongs = [...state.playlistSongs, ...songs];
             state.onlineSongs = songs; // 保留原有的在线音乐列表
 
             // 更新播放列表显示
