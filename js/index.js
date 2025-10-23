@@ -730,10 +730,7 @@ async function sendPlaylistSyncUpdate(snapshot) {
     }
 
     if (response.status === 501) {
-        playlistSync.enabled = false;
-        playlistSync.pendingSnapshot = null;
-        safeRemoveLocalStorage(PLAYLIST_SYNC_STORAGE_KEY);
-        updatePlaylistSyncUI();
+        disablePlaylistSync({ message: "云同步不可用，将使用本地播放列表" });
         throw new Error("Playlist sync unavailable");
     }
 
@@ -763,10 +760,7 @@ async function createPlaylistOnServer(payload, snapshot = computePlaylistSyncSna
     });
 
     if (response.status === 501) {
-        playlistSync.enabled = false;
-        playlistSync.pendingSnapshot = null;
-        safeRemoveLocalStorage(PLAYLIST_SYNC_STORAGE_KEY);
-        updatePlaylistSyncUI();
+        disablePlaylistSync({ message: "云同步不可用，将使用本地播放列表" });
         throw new Error("Playlist sync unavailable");
     }
 
@@ -804,10 +798,7 @@ async function fetchPlaylistFromServer(id) {
     }
 
     if (response.status === 501) {
-        playlistSync.enabled = false;
-        playlistSync.pendingSnapshot = null;
-        safeRemoveLocalStorage(PLAYLIST_SYNC_STORAGE_KEY);
-        updatePlaylistSyncUI();
+        disablePlaylistSync({ message: "云同步不可用，将使用本地播放列表" });
         return null;
     }
 
@@ -910,8 +901,7 @@ async function initializePlaylistSync() {
     }
 
     if (typeof fetch !== "function") {
-        playlistSync.enabled = false;
-        updatePlaylistSyncUI();
+        disablePlaylistSync({ message: "当前环境不支持云同步" });
         return;
     }
 
@@ -940,9 +930,9 @@ async function initializePlaylistSync() {
         try {
             await createPlaylistOnServer(getPlaylistSyncPayload(), localSnapshot);
         } catch (error) {
-            playlistSync.enabled = false;
             console.warn("初始化云同步失败:", error);
-            showNotification("云同步不可用，将使用本地播放列表", "error");
+            disablePlaylistSync({ message: "云同步不可用，将使用本地播放列表" });
+            return;
         }
         updatePlaylistSyncUI();
         return;
@@ -952,6 +942,10 @@ async function initializePlaylistSync() {
 
     try {
         const remote = await fetchPlaylistFromServer(playlistSync.id);
+        if (!playlistSync.enabled) {
+            updatePlaylistSyncUI();
+            return;
+        }
         if (!remote) {
             await sendPlaylistSyncUpdate(localSnapshot);
             updatePlaylistSyncUI();
