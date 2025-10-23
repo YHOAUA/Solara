@@ -13,7 +13,6 @@ const dom = {
     mobileInlineLyricsContent: document.getElementById("mobileInlineLyricsContent"),
     audioPlayer: document.getElementById("audioPlayer"),
     themeToggleButton: document.getElementById("themeToggleButton"),
-    loadOnlineBtn: document.getElementById("loadOnlineBtn"),
     showPlaylistBtn: document.getElementById("showPlaylistBtn"),
     showLyricsBtn: document.getElementById("showLyricsBtn"),
     searchInput: document.getElementById("searchInput"),
@@ -43,7 +42,6 @@ const dom = {
     mobilePanelClose: document.getElementById("mobilePanelClose"),
     mobileClearPlaylistBtn: document.getElementById("mobileClearPlaylistBtn"),
     mobileOverlayScrim: document.getElementById("mobileOverlayScrim"),
-    mobileExploreButton: document.getElementById("mobileExploreButton"),
     mobileQualityToggle: document.getElementById("mobileQualityToggle"),
     mobileQualityLabel: document.getElementById("mobileQualityLabel"),
     mobilePanel: document.getElementById("mobilePanel"),
@@ -385,7 +383,7 @@ const savedPlaylistSyncMeta = (() => {
 })();
 
 const PLAYLIST_SYNC_PLAY_MODES = ["list", "single", "random"];
-const PLAYLIST_SYNC_SCOPES = ["playlist", "online", "search"];
+const PLAYLIST_SYNC_SCOPES = ["playlist", "search"];
 
 const playlistSync = {
     id: savedPlaylistSyncMeta?.id || null,
@@ -1207,7 +1205,7 @@ const savedCurrentSong = (() => {
 
 const savedCurrentPlaylist = (() => {
     const stored = safeGetLocalStorage("currentPlaylist");
-    const playlists = ["playlist", "online", "search"];
+    const playlists = ["playlist", "search"];
     return playlists.includes(stored) ? stored : "playlist";
 })();
 
@@ -1271,59 +1269,6 @@ const API = {
         }
     },
 
-    getRadarPlaylist: async (playlistId = "3778678", options = {}) => {
-        const signature = API.generateSignature();
-
-        let limit = 50;
-        let offset = 0;
-
-        if (typeof options === "number") {
-            limit = options;
-        } else if (options && typeof options === "object") {
-            if (Number.isFinite(options.limit)) {
-                limit = options.limit;
-            } else if (Number.isFinite(options.count)) {
-                limit = options.count;
-            }
-            if (Number.isFinite(options.offset)) {
-                offset = options.offset;
-            }
-        }
-
-        limit = Math.max(1, Math.min(200, Math.trunc(limit)) || 50);
-        offset = Math.max(0, Math.trunc(offset) || 0);
-
-        const params = new URLSearchParams({
-            types: "playlist",
-            id: playlistId,
-            limit: String(limit),
-            offset: String(offset),
-            s: signature,
-        });
-        const url = `${API.baseUrl}?${params.toString()}`;
-
-        try {
-            const data = await API.fetchJson(url);
-            const tracks = data && data.playlist && Array.isArray(data.playlist.tracks)
-                ? data.playlist.tracks.slice(0, limit)
-                : [];
-
-            if (tracks.length === 0) throw new Error("No tracks found");
-
-            return tracks.map(track => ({
-                id: track.id,
-                name: track.name,
-                artist: Array.isArray(track.ar) ? track.ar.map(artist => artist.name).join(" / ") : "",
-                source: "netease",
-                lyric_id: track.id,
-                pic_id: track.al?.pic_str || track.al?.pic || track.al?.picUrl || "",
-            }));
-        } catch (error) {
-            console.error("API request failed:", error);
-            throw error;
-        }
-    },
-
     getSongUrl: (song, quality = "320") => {
         const signature = API.generateSignature();
         return `${API.baseUrl}?types=url&id=${song.id}&source=${song.source || "netease"}&br=${quality}&s=${signature}`;
@@ -1361,14 +1306,13 @@ const initialPlaylistSongs = (() => {
 })();
 
 const state = {
-    onlineSongs: [],
     searchResults: [],
     renderedSearchCount: 0,
     currentTrackIndex: savedCurrentTrackIndex,
     currentAudioUrl: null,
     lyricsData: [],
     currentLyricLine: -1,
-    currentPlaylist: savedCurrentPlaylist, // 'online', 'search', or 'playlist'
+    currentPlaylist: savedCurrentPlaylist, // 'search' 或 'playlist'
     searchPage: 1,
     searchKeyword: "", // 确保这里有初始值
     searchSource: savedSearchSource,
@@ -3111,16 +3055,6 @@ async function setupInteractions() {
         });
     }
 
-    dom.loadOnlineBtn.addEventListener("click", exploreOnlineMusic);
-    if (dom.mobileExploreButton) {
-        dom.mobileExploreButton.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            closeAllMobileOverlays();
-            exploreOnlineMusic();
-        });
-    }
-
     if (dom.showPlaylistBtn) {
         dom.showPlaylistBtn.addEventListener("click", () => {
             if (isMobileView) {
@@ -3693,8 +3627,6 @@ async function downloadWithQuality(event, index, type, quality) {
 
     if (type === "search") {
         song = state.searchResults[index];
-    } else if (type === "online") {
-        song = state.onlineSongs[index];
     } else if (type === "playlist") {
         song = state.playlistSongs[index];
     }
@@ -4159,8 +4091,6 @@ function playNext() {
 
     if (state.currentPlaylist === "playlist") {
         playlist = state.playlistSongs;
-    } else if (state.currentPlaylist === "online") {
-        playlist = state.onlineSongs;
     } else if (state.currentPlaylist === "search") {
         playlist = state.searchResults;
     }
@@ -4179,8 +4109,6 @@ function playNext() {
 
     if (state.currentPlaylist === "playlist") {
         playPlaylistSong(nextIndex);
-    } else if (state.currentPlaylist === "online") {
-        playOnlineSong(nextIndex);
     } else if (state.currentPlaylist === "search") {
         playSearchResult(nextIndex);
     }
@@ -4193,8 +4121,6 @@ function playPrevious() {
 
     if (state.currentPlaylist === "playlist") {
         playlist = state.playlistSongs;
-    } else if (state.currentPlaylist === "online") {
-        playlist = state.onlineSongs;
     } else if (state.currentPlaylist === "search") {
         playlist = state.searchResults;
     }
@@ -4214,76 +4140,8 @@ function playPrevious() {
 
     if (state.currentPlaylist === "playlist") {
         playPlaylistSong(prevIndex);
-    } else if (state.currentPlaylist === "online") {
-        playOnlineSong(prevIndex);
     } else if (state.currentPlaylist === "search") {
         playSearchResult(prevIndex);
-    }
-}
-
-// 修复：在线音乐播放函数
-async function playOnlineSong(index) {
-    const song = state.onlineSongs[index];
-    if (!song) return;
-
-    state.currentTrackIndex = index;
-    state.currentPlaylist = "online";
-
-    try {
-        await playSong(song);
-        updateOnlineHighlight();
-    } catch (error) {
-        console.error("播放失败:", error);
-        showNotification("播放失败，请稍后重试", "error");
-    }
-}
-
-// 修复：更新在线音乐高亮
-function updateOnlineHighlight() {
-    if (!dom.playlistItems) return;
-    const playlistItems = dom.playlistItems.querySelectorAll(".playlist-item");
-    playlistItems.forEach((item, index) => {
-        if (state.currentPlaylist === "online" && index === state.currentTrackIndex) {
-            item.classList.add("current");
-        } else {
-            item.classList.remove("current");
-        }
-    });
-}
-
-// 修复：探索在线音乐 - 添加到统一播放列表
-async function exploreOnlineMusic() {
-    const btn = dom.loadOnlineBtn;
-    const btnText = btn.querySelector(".btn-text");
-    const loader = btn.querySelector(".loader");
-
-    try {
-        btn.disabled = true;
-        btnText.style.display = "none";
-        loader.style.display = "inline-block";
-
-        const songs = await API.getRadarPlaylist("3778678", { limit: 50, offset: 0 });
-
-        if (songs.length > 0) {
-            // 将在线音乐添加到统一播放列表
-            state.playlistSongs.push(...songs);
-            state.onlineSongs = songs; // 保留原有的在线音乐列表
-
-            // 更新播放列表显示
-            renderPlaylist();
-
-            showNotification(`已加载 ${songs.length} 首探索雷达歌曲到播放列表`);
-            debugLog(`加载探索雷达播放列表成功: ${songs.length} 首歌曲`);
-        } else {
-            showNotification("未找到在线音乐", "error");
-        }
-    } catch (error) {
-        console.error("加载在线音乐失败:", error);
-        showNotification("加载失败，请稍后重试", "error");
-    } finally {
-        btn.disabled = false;
-        btnText.style.display = "flex";
-        loader.style.display = "none";
     }
 }
 

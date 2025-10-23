@@ -409,9 +409,6 @@ body.mobile-view .controls {
     margin-top: auto;
 }
 
-body.mobile-view #loadOnlineBtn {
-    display: none;
-}
 
 body.mobile-view .progress-container {
     order: 1;
