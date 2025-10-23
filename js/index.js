@@ -50,6 +50,8 @@ const dom = {
     mobilePanelTitle: document.getElementById("mobilePanelTitle"),
     mobileQueueToggle: document.getElementById("mobileQueueToggle"),
     searchArea: document.getElementById("searchArea"),
+    playlistSyncStatus: document.getElementById("playlistSyncStatus"),
+    playlistSyncBtn: document.getElementById("playlistSyncBtn"),
 };
 
 window.SolaraDom = dom;
@@ -309,6 +311,14 @@ function safeSetLocalStorage(key, value) {
     }
 }
 
+function safeRemoveLocalStorage(key) {
+    try {
+        localStorage.removeItem(key);
+    } catch (error) {
+        console.warn(`移除本地存储失败: ${key}`, error);
+    }
+}
+
 function parseJSON(value, fallback) {
     if (!value) return fallback;
     try {
@@ -350,6 +360,66 @@ function persistPaletteCache() {
     }
 }
 
+const PLAYLIST_SYNC_STORAGE_KEY = "playlistSync.meta.v1";
+const PLAYLIST_SYNC_ENDPOINT = "/playlist";
+const PLAYLIST_SYNC_SHARE_PARAM = "sync";
+const PLAYLIST_SYNC_DEBOUNCE_MS = 800;
+
+const savedPlaylistSyncMeta = (() => {
+    const stored = safeGetLocalStorage(PLAYLIST_SYNC_STORAGE_KEY);
+    const parsed = parseJSON(stored, null);
+    if (!parsed || typeof parsed !== "object") {
+        return null;
+    }
+    return {
+        id: typeof parsed.id === "string" && parsed.id.trim() ? parsed.id.trim() : null,
+        updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : null,
+        lastSyncedAt: typeof parsed.lastSyncedAt === "string" ? parsed.lastSyncedAt : null,
+        lastSyncedSnapshot: typeof parsed.lastSyncedSnapshot === "string" ? parsed.lastSyncedSnapshot : null,
+    };
+})();
+
+const PLAYLIST_SYNC_PLAY_MODES = ["list", "single", "random"];
+const PLAYLIST_SYNC_SCOPES = ["playlist", "online", "search"];
+
+const playlistSync = {
+    id: savedPlaylistSyncMeta?.id || null,
+    updatedAt: savedPlaylistSyncMeta?.updatedAt || null,
+    lastSyncedAt: savedPlaylistSyncMeta?.lastSyncedAt || null,
+    lastSyncedSnapshot: savedPlaylistSyncMeta?.lastSyncedSnapshot || null,
+    pendingSnapshot: null,
+    debounceTimer: null,
+    inFlight: null,
+    enabled: true,
+    error: null,
+    notifiedError: false,
+};
+
+let isRestoringPlaylistFromRemote = false;
+
+function disablePlaylistSync({ message, type = "error" } = {}) {
+    const wasEnabled = playlistSync.enabled;
+    if (playlistSync.debounceTimer) {
+        window.clearTimeout(playlistSync.debounceTimer);
+        playlistSync.debounceTimer = null;
+    }
+    playlistSync.enabled = false;
+    playlistSync.pendingSnapshot = null;
+    playlistSync.inFlight = null;
+    playlistSync.id = null;
+    playlistSync.updatedAt = null;
+    playlistSync.lastSyncedAt = null;
+    playlistSync.lastSyncedSnapshot = null;
+    playlistSync.error = null;
+    playlistSync.notifiedError = false;
+    persistPlaylistSyncMeta();
+    updatePlaylistShareUrl();
+    updatePlaylistSyncUI();
+    if (message && wasEnabled) {
+        showNotification(message, type);
+    }
+}
+
 function preferHttpsUrl(url) {
     if (!url || typeof url !== "string") return url;
 
@@ -385,6 +455,558 @@ function buildAudioProxyUrl(url) {
     } catch (error) {
         console.warn("无法解析音频地址，跳过代理", error);
         return url;
+    }
+}
+
+function getPlaylistSyncPayload() {
+    const songs = Array.isArray(state.playlistSongs) ? state.playlistSongs : [];
+    let currentTrackIndex = Number.isInteger(state.currentTrackIndex) ? state.currentTrackIndex : (songs.length ? 0 : -1);
+    if (songs.length === 0) {
+        currentTrackIndex = -1;
+    } else if (currentTrackIndex < 0 || currentTrackIndex >= songs.length) {
+        currentTrackIndex = Math.min(Math.max(currentTrackIndex, 0), songs.length - 1);
+    }
+
+    const payload = {
+        songs,
+        currentTrackIndex,
+        playMode: typeof state.playMode === "string" && PLAYLIST_SYNC_PLAY_MODES.includes(state.playMode)
+            ? state.playMode
+            : PLAYLIST_SYNC_PLAY_MODES[0],
+        playbackQuality: normalizeQuality(state.playbackQuality),
+        currentPlaylist: typeof state.currentPlaylist === "string" && PLAYLIST_SYNC_SCOPES.includes(state.currentPlaylist)
+            ? state.currentPlaylist
+            : PLAYLIST_SYNC_SCOPES[0],
+        currentSong: state.currentSong && typeof state.currentSong === "object" ? state.currentSong : null,
+        currentPlaybackTime: Number.isFinite(state.currentPlaybackTime) && state.currentPlaybackTime >= 0
+            ? state.currentPlaybackTime
+            : 0,
+    };
+
+    if (Number.isFinite(state.volume)) {
+        payload.volume = Math.min(Math.max(state.volume, 0), 1);
+    }
+
+    return payload;
+}
+
+function computePlaylistSyncSnapshot(payload = null) {
+    const base = payload || getPlaylistSyncPayload();
+    try {
+        return JSON.stringify(base);
+    } catch (error) {
+        console.warn("序列化播放列表失败，使用空数据", error);
+        return JSON.stringify({
+            songs: [],
+            currentTrackIndex: -1,
+            playMode: PLAYLIST_SYNC_PLAY_MODES[0],
+            playbackQuality: "320",
+            currentPlaylist: PLAYLIST_SYNC_SCOPES[0],
+            currentSong: null,
+            currentPlaybackTime: 0,
+        });
+    }
+}
+
+function persistPlaylistSyncMeta() {
+    if (!playlistSync.id) {
+        safeRemoveLocalStorage(PLAYLIST_SYNC_STORAGE_KEY);
+        return;
+    }
+    const meta = {
+        id: playlistSync.id,
+        updatedAt: playlistSync.updatedAt,
+        lastSyncedAt: playlistSync.lastSyncedAt,
+        lastSyncedSnapshot: playlistSync.lastSyncedSnapshot,
+    };
+    safeSetLocalStorage(PLAYLIST_SYNC_STORAGE_KEY, JSON.stringify(meta));
+}
+
+function formatRelativeSyncTime(isoString) {
+    if (!isoString) {
+        return "";
+    }
+    const timestamp = Date.parse(isoString);
+    if (!Number.isFinite(timestamp)) {
+        return isoString;
+    }
+    const diff = Date.now() - timestamp;
+    if (diff < 45_000) {
+        return "刚刚";
+    }
+    if (diff < 3_600_000) {
+        return `${Math.round(diff / 60_000)} 分钟前`;
+    }
+    if (diff < 86_400_000) {
+        return `${Math.round(diff / 3_600_000)} 小时前`;
+    }
+    const date = new Date(timestamp);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+}
+
+function buildPlaylistShareUrl(id = playlistSync.id) {
+    if (!id) {
+        return window.location.href;
+    }
+    try {
+        const url = new URL(window.location.href);
+        url.searchParams.set(PLAYLIST_SYNC_SHARE_PARAM, id);
+        return url.toString();
+    } catch (error) {
+        console.warn("生成云同步链接失败", error);
+        return `${window.location.origin}${window.location.pathname}?${PLAYLIST_SYNC_SHARE_PARAM}=${encodeURIComponent(id)}`;
+    }
+}
+
+function updatePlaylistShareUrl() {
+    try {
+        const url = new URL(window.location.href);
+        if (playlistSync.id) {
+            if (url.searchParams.get(PLAYLIST_SYNC_SHARE_PARAM) === playlistSync.id) {
+                return;
+            }
+            url.searchParams.set(PLAYLIST_SYNC_SHARE_PARAM, playlistSync.id);
+        } else if (url.searchParams.has(PLAYLIST_SYNC_SHARE_PARAM)) {
+            url.searchParams.delete(PLAYLIST_SYNC_SHARE_PARAM);
+        } else {
+            return;
+        }
+        const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+        window.history.replaceState(window.history.state, document.title, nextUrl);
+    } catch (error) {
+        console.warn("更新云同步分享链接失败", error);
+    }
+}
+
+function updatePlaylistSyncUI() {
+    if (!dom.playlistSyncBtn || !dom.playlistSyncStatus) {
+        return;
+    }
+
+    const button = dom.playlistSyncBtn;
+    const status = dom.playlistSyncStatus;
+    status.className = "playlist-sync-status";
+
+    if (!playlistSync.enabled) {
+        button.disabled = true;
+        button.title = "云同步不可用";
+        status.textContent = "云同步不可用";
+        status.classList.add("playlist-sync-status--error");
+        return;
+    }
+
+    if (!playlistSync.id) {
+        button.disabled = true;
+        button.title = "云同步初始化中...";
+        status.textContent = "云同步初始化中...";
+        return;
+    }
+
+    button.disabled = Boolean(playlistSync.inFlight);
+    button.title = "复制云同步链接";
+
+    if (playlistSync.inFlight) {
+        status.textContent = "云同步中...";
+        return;
+    }
+
+    if (playlistSync.error) {
+        status.textContent = "同步失败，将自动重试";
+        status.classList.add("playlist-sync-status--error");
+        return;
+    }
+
+    let suffix = "";
+    if (playlistSync.lastSyncedAt) {
+        const relative = formatRelativeSyncTime(playlistSync.lastSyncedAt);
+        suffix = relative ? ` · 更新于 ${relative}` : "";
+        status.classList.add("playlist-sync-status--success");
+    }
+    status.textContent = `云同步 ID: ${playlistSync.id}${suffix}`;
+}
+
+function handlePlaylistSyncChange(snapshot) {
+    if (!playlistSync.enabled) {
+        return;
+    }
+    if (!snapshot) {
+        snapshot = computePlaylistSyncSnapshot();
+    }
+    if (!playlistSync.id) {
+        playlistSync.pendingSnapshot = snapshot;
+        updatePlaylistSyncUI();
+        return;
+    }
+    if (playlistSync.lastSyncedSnapshot === snapshot && !playlistSync.pendingSnapshot) {
+        return;
+    }
+    queuePlaylistSyncUpdate(snapshot);
+}
+
+function queuePlaylistSyncUpdate(snapshot) {
+    playlistSync.pendingSnapshot = snapshot;
+    if (playlistSync.debounceTimer) {
+        window.clearTimeout(playlistSync.debounceTimer);
+    }
+    if (!playlistSync.id) {
+        updatePlaylistSyncUI();
+        return;
+    }
+    playlistSync.debounceTimer = window.setTimeout(() => {
+        playlistSync.debounceTimer = null;
+        flushPlaylistSyncQueue();
+    }, PLAYLIST_SYNC_DEBOUNCE_MS);
+    updatePlaylistSyncUI();
+}
+
+async function flushPlaylistSyncQueue() {
+    if (!playlistSync.enabled) {
+        playlistSync.pendingSnapshot = null;
+        updatePlaylistSyncUI();
+        return;
+    }
+    if (!playlistSync.id || !playlistSync.pendingSnapshot) {
+        updatePlaylistSyncUI();
+        return;
+    }
+    if (playlistSync.inFlight) {
+        return;
+    }
+
+    const snapshot = playlistSync.pendingSnapshot;
+    playlistSync.pendingSnapshot = null;
+
+    const task = sendPlaylistSyncUpdate(snapshot)
+        .catch((error) => {
+            playlistSync.error = error;
+            playlistSync.pendingSnapshot = snapshot;
+            if (!playlistSync.notifiedError) {
+                showNotification("云同步失败，将自动重试", "error");
+                playlistSync.notifiedError = true;
+            }
+            console.warn("同步播放列表失败:", error);
+        })
+        .finally(() => {
+            playlistSync.inFlight = null;
+            if (playlistSync.pendingSnapshot && !playlistSync.debounceTimer && playlistSync.enabled) {
+                playlistSync.debounceTimer = window.setTimeout(() => {
+                    playlistSync.debounceTimer = null;
+                    flushPlaylistSyncQueue();
+                }, PLAYLIST_SYNC_DEBOUNCE_MS * 2);
+            }
+            updatePlaylistSyncUI();
+        });
+
+    playlistSync.inFlight = task;
+    updatePlaylistSyncUI();
+    await task;
+}
+
+async function sendPlaylistSyncUpdate(snapshot) {
+    if (!playlistSync.id) {
+        throw new Error("Missing playlist sync identifier");
+    }
+
+    let payload;
+    try {
+        payload = JSON.parse(snapshot);
+    } catch (error) {
+        console.warn("解析同步数据失败", error);
+        payload = getPlaylistSyncPayload();
+        snapshot = computePlaylistSyncSnapshot(payload);
+    }
+
+    const response = await fetch(`${PLAYLIST_SYNC_ENDPOINT}?id=${encodeURIComponent(playlistSync.id)}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (response.status === 404) {
+        return createPlaylistOnServer(payload, snapshot);
+    }
+
+    if (response.status === 501) {
+        disablePlaylistSync({ message: "云同步不可用，将使用本地播放列表" });
+        throw new Error("Playlist sync unavailable");
+    }
+
+    if (!response.ok) {
+        throw new Error(`Failed to update playlist: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const updatedAt = typeof data.updatedAt === "string" ? data.updatedAt : new Date().toISOString();
+    playlistSync.updatedAt = updatedAt;
+    playlistSync.lastSyncedAt = updatedAt;
+    playlistSync.lastSyncedSnapshot = snapshot;
+    playlistSync.error = null;
+    playlistSync.notifiedError = false;
+    persistPlaylistSyncMeta();
+    return data;
+}
+
+async function createPlaylistOnServer(payload, snapshot = computePlaylistSyncSnapshot(payload)) {
+    const response = await fetch(PLAYLIST_SYNC_ENDPOINT, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (response.status === 501) {
+        disablePlaylistSync({ message: "云同步不可用，将使用本地播放列表" });
+        throw new Error("Playlist sync unavailable");
+    }
+
+    if (!response.ok) {
+        throw new Error(`Failed to create playlist: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (typeof data.id === "string" && data.id.trim()) {
+        playlistSync.id = data.id.trim();
+    }
+    const updatedAt = typeof data.updatedAt === "string" ? data.updatedAt : new Date().toISOString();
+    playlistSync.updatedAt = updatedAt;
+    playlistSync.lastSyncedAt = updatedAt;
+    playlistSync.lastSyncedSnapshot = snapshot;
+    playlistSync.pendingSnapshot = null;
+    playlistSync.error = null;
+    playlistSync.notifiedError = false;
+    persistPlaylistSyncMeta();
+    updatePlaylistShareUrl();
+    updatePlaylistSyncUI();
+    return data;
+}
+
+async function fetchPlaylistFromServer(id) {
+    const response = await fetch(`${PLAYLIST_SYNC_ENDPOINT}?id=${encodeURIComponent(id)}`, {
+        method: "GET",
+        headers: {
+            "Accept": "application/json",
+        },
+    });
+
+    if (response.status === 404) {
+        return null;
+    }
+
+    if (response.status === 501) {
+        disablePlaylistSync({ message: "云同步不可用，将使用本地播放列表" });
+        return null;
+    }
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch playlist: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const updatedAt = typeof data.updatedAt === "string" ? data.updatedAt : new Date().toISOString();
+    const playlist = normalizeRemotePlaylist(data.playlist);
+    return {
+        updatedAt,
+        playlist,
+        version: data.version ?? 1,
+    };
+}
+
+function normalizeRemotePlaylist(rawValue) {
+    const value = rawValue && typeof rawValue === "object" ? rawValue : {};
+    const songs = Array.isArray(value.songs) ? value.songs : [];
+
+    let currentTrackIndex = Number.isInteger(value.currentTrackIndex) ? value.currentTrackIndex : (songs.length ? 0 : -1);
+    if (songs.length === 0) {
+        currentTrackIndex = -1;
+    } else if (currentTrackIndex < 0 || currentTrackIndex >= songs.length) {
+        currentTrackIndex = Math.min(Math.max(currentTrackIndex, 0), songs.length - 1);
+    }
+
+    const playMode = typeof value.playMode === "string" && PLAYLIST_SYNC_PLAY_MODES.includes(value.playMode)
+        ? value.playMode
+        : PLAYLIST_SYNC_PLAY_MODES[0];
+
+    const playbackQuality = normalizeQuality(typeof value.playbackQuality === "string" ? value.playbackQuality : undefined);
+
+    const currentPlaylist = typeof value.currentPlaylist === "string" && PLAYLIST_SYNC_SCOPES.includes(value.currentPlaylist)
+        ? value.currentPlaylist
+        : PLAYLIST_SYNC_SCOPES[0];
+
+    const currentSong = value.currentSong && typeof value.currentSong === "object" ? value.currentSong : null;
+
+    const currentPlaybackTime = typeof value.currentPlaybackTime === "number" && Number.isFinite(value.currentPlaybackTime) && value.currentPlaybackTime >= 0
+        ? value.currentPlaybackTime
+        : 0;
+
+    const normalized = {
+        songs,
+        currentTrackIndex,
+        playMode,
+        playbackQuality,
+        currentPlaylist,
+        currentSong,
+        currentPlaybackTime,
+    };
+
+    if (typeof value.volume === "number" && Number.isFinite(value.volume)) {
+        normalized.volume = Math.min(Math.max(value.volume, 0), 1);
+    }
+
+    return normalized;
+}
+
+function applyRemotePlaylist(payload, snapshotString) {
+    const normalized = normalizeRemotePlaylist(payload);
+    isRestoringPlaylistFromRemote = true;
+    try {
+        state.playlistSongs = normalized.songs;
+        state.currentTrackIndex = normalized.currentTrackIndex;
+        state.playMode = normalized.playMode;
+        state.playbackQuality = normalized.playbackQuality;
+        state.currentPlaylist = normalized.currentPlaylist;
+        state.currentSong = normalized.currentSong;
+        state.currentPlaybackTime = normalized.currentPlaybackTime;
+        if (typeof normalized.volume === "number" && !Number.isNaN(normalized.volume)) {
+            state.volume = normalized.volume;
+            if (dom.audioPlayer) {
+                dom.audioPlayer.volume = normalized.volume;
+            }
+            if (dom.volumeSlider) {
+                dom.volumeSlider.value = normalized.volume;
+                updateVolumeSliderBackground(normalized.volume);
+                updateVolumeIcon(normalized.volume);
+            }
+        }
+        savePlayerState();
+    } finally {
+        isRestoringPlaylistFromRemote = false;
+    }
+    playlistSync.lastSyncedSnapshot = snapshotString || computePlaylistSyncSnapshot(normalized);
+    playlistSync.pendingSnapshot = null;
+    playlistSync.error = null;
+    playlistSync.notifiedError = false;
+    persistPlaylistSyncMeta();
+    updatePlaylistSyncUI();
+}
+
+async function initializePlaylistSync() {
+    if (!playlistSync.enabled) {
+        updatePlaylistSyncUI();
+        return;
+    }
+
+    if (typeof fetch !== "function") {
+        disablePlaylistSync({ message: "当前环境不支持云同步" });
+        return;
+    }
+
+    updatePlaylistSyncUI();
+
+    let sharedId = null;
+    try {
+        const url = new URL(window.location.href);
+        sharedId = url.searchParams.get(PLAYLIST_SYNC_SHARE_PARAM)?.trim() || null;
+    } catch (error) {
+        console.warn("解析云同步参数失败", error);
+    }
+
+    if (sharedId && sharedId !== playlistSync.id) {
+        playlistSync.id = sharedId;
+        playlistSync.updatedAt = null;
+        playlistSync.lastSyncedAt = null;
+        playlistSync.lastSyncedSnapshot = null;
+        playlistSync.pendingSnapshot = null;
+        persistPlaylistSyncMeta();
+    }
+
+    const localSnapshot = computePlaylistSyncSnapshot();
+
+    if (!playlistSync.id) {
+        try {
+            await createPlaylistOnServer(getPlaylistSyncPayload(), localSnapshot);
+        } catch (error) {
+            console.warn("初始化云同步失败:", error);
+            disablePlaylistSync({ message: "云同步不可用，将使用本地播放列表" });
+            return;
+        }
+        updatePlaylistSyncUI();
+        return;
+    }
+
+    updatePlaylistShareUrl();
+
+    try {
+        const remote = await fetchPlaylistFromServer(playlistSync.id);
+        if (!playlistSync.enabled) {
+            updatePlaylistSyncUI();
+            return;
+        }
+        if (!remote) {
+            await sendPlaylistSyncUpdate(localSnapshot);
+            updatePlaylistSyncUI();
+            return;
+        }
+
+        const remoteSnapshot = computePlaylistSyncSnapshot(remote.playlist);
+        const remoteTime = Date.parse(remote.updatedAt || "");
+        const localTime = playlistSync.updatedAt ? Date.parse(playlistSync.updatedAt) : NaN;
+        const remoteIsNewer = Number.isFinite(remoteTime) && (!Number.isFinite(localTime) || remoteTime >= localTime);
+
+        if (remoteIsNewer && remoteSnapshot !== playlistSync.lastSyncedSnapshot) {
+            applyRemotePlaylist(remote.playlist, remoteSnapshot);
+        }
+
+        playlistSync.updatedAt = remote.updatedAt;
+        playlistSync.lastSyncedAt = remote.updatedAt;
+        playlistSync.lastSyncedSnapshot = remoteSnapshot;
+        playlistSync.error = null;
+        playlistSync.notifiedError = false;
+        persistPlaylistSyncMeta();
+        updatePlaylistSyncUI();
+
+        if (remoteSnapshot !== localSnapshot) {
+            queuePlaylistSyncUpdate(localSnapshot);
+        } else {
+            playlistSync.pendingSnapshot = null;
+        }
+    } catch (error) {
+        if (!playlistSync.enabled) {
+            updatePlaylistSyncUI();
+            return;
+        }
+        playlistSync.error = error;
+        playlistSync.notifiedError = true;
+        console.warn("拉取云播放列表失败:", error);
+        showNotification("同步云播放列表失败，将稍后重试", "error");
+        updatePlaylistSyncUI();
+    }
+}
+
+async function copyPlaylistSyncLink() {
+    if (!playlistSync.id) {
+        showNotification("云同步尚未初始化", "error");
+        return;
+    }
+
+    const shareUrl = buildPlaylistShareUrl(playlistSync.id);
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            await navigator.clipboard.writeText(shareUrl);
+            showNotification("云同步链接已复制", "success");
+        } else {
+            const result = window.prompt("复制云同步链接", shareUrl);
+            if (result !== null) {
+                showNotification("请在新浏览器中打开该链接以恢复播放列表", "success");
+            }
+        }
+    } catch (error) {
+        console.warn("复制云同步链接失败", error);
+        showNotification("复制失败，请手动复制链接", "error");
     }
 }
 
@@ -1140,6 +1762,16 @@ function savePlayerState() {
         safeSetLocalStorage("currentSong", "");
     }
     safeSetLocalStorage("currentPlaybackTime", String(state.currentPlaybackTime || 0));
+
+    const snapshot = computePlaylistSyncSnapshot();
+    if (isRestoringPlaylistFromRemote) {
+        playlistSync.lastSyncedSnapshot = snapshot;
+        persistPlaylistSyncMeta();
+        updatePlaylistSyncUI();
+        return;
+    }
+    handlePlaylistSyncChange(snapshot);
+    updatePlaylistSyncUI();
 }
 
 // 调试日志函数
@@ -1838,10 +2470,15 @@ async function restoreCurrentSongState() {
     }
 }
 
-window.addEventListener("load", setupInteractions);
+window.addEventListener("load", () => {
+    setupInteractions().catch(error => {
+        console.error("初始化界面失败:", error);
+        showNotification("初始化失败，请刷新页面重试", "error");
+    });
+});
 dom.audioPlayer.addEventListener("ended", autoPlayNext);
 
-function setupInteractions() {
+async function setupInteractions() {
     function ensureQualityMenuPortal() {
         if (!dom.playerQualityMenu || !document.body || !isMobileView) {
             return;
@@ -1991,6 +2628,10 @@ function setupInteractions() {
         setQualityAnchorState(dom.mobileQualityToggle, false);
     }
     dom.playerQualityMenu.addEventListener("click", handlePlayerQualitySelection);
+
+    if (dom.playlistSyncBtn) {
+        dom.playlistSyncBtn.addEventListener("click", copyPlaylistSyncLink);
+    }
 
     if (isMobileView && dom.albumCover) {
         dom.albumCover.addEventListener("click", () => {
@@ -2158,6 +2799,21 @@ function setupInteractions() {
 
     attachLyricScrollHandler(dom.lyricsScroll, () => dom.lyricsContent?.querySelector(".current"));
     attachLyricScrollHandler(dom.mobileInlineLyricsScroll, () => dom.mobileInlineLyricsContent?.querySelector(".current"));
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+            flushPlaylistSyncQueue();
+        }
+    });
+
+    window.addEventListener("pagehide", () => {
+        flushPlaylistSyncQueue();
+    });
+
+    await initializePlaylistSync();
+    updatePlaylistSyncUI();
+    updatePlayModeUI();
+    updateQualityLabel();
 
     if (state.playlistSongs.length > 0) {
         let restoredIndex = state.currentTrackIndex;
