@@ -302,6 +302,7 @@ body.mobile-view .mobile-inline-lyrics__content div[data-index] {
     border-radius: 14px;
     transition: color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
     word-break: break-word;
+    cursor: pointer;
 }
 
 body.mobile-view .mobile-inline-lyrics__content .current {

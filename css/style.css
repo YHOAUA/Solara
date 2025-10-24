@@ -952,6 +952,8 @@ html.mobile-view .playlist-label {
     word-wrap: break-word;
     overflow-wrap: break-word;
     max-width: 100%;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* 当歌词容器只有默认文本时的样式 */
