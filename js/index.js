@@ -1253,7 +1253,45 @@ const state = {
     audioReadyForPalette: true,
     currentGradient: '',
     isMobileInlineLyricsOpen: false,
+    defaultDocumentTitle: document.title,
+    tabTitleBase: document.title,
+    currentLyricForTitle: "",
 };
+
+function applyDocumentTitle() {
+    const fallbackTitle = state.defaultDocumentTitle || document.title || "";
+    const lyricText = (state.currentLyricForTitle || "").trim();
+    const baseTitle = (state.tabTitleBase || fallbackTitle).trim();
+    const parts = [];
+    if (lyricText) {
+        parts.push(lyricText);
+    }
+    if (baseTitle && baseTitle !== lyricText) {
+        parts.push(baseTitle);
+    }
+    const nextTitle = parts.join(" · ") || fallbackTitle;
+    if (document.title !== nextTitle) {
+        document.title = nextTitle;
+    }
+}
+
+function setTabTitleBase(base) {
+    const fallbackTitle = state.defaultDocumentTitle || document.title || "";
+    const normalized = typeof base === "string" ? base.trim() : "";
+    const nextBase = normalized || fallbackTitle;
+    if (state.tabTitleBase !== nextBase) {
+        state.tabTitleBase = nextBase;
+    }
+    applyDocumentTitle();
+}
+
+function setTabTitleLyric(lyric) {
+    const normalized = typeof lyric === "string" ? lyric.trim() : "";
+    if (state.currentLyricForTitle !== normalized) {
+        state.currentLyricForTitle = normalized;
+    }
+    applyDocumentTitle();
+}
 
 let sourceMenuPositionFrame = null;
 let qualityMenuPositionFrame = null;
@@ -2800,6 +2838,13 @@ async function setupInteractions() {
     attachLyricScrollHandler(dom.lyricsScroll, () => dom.lyricsContent?.querySelector(".current"));
     attachLyricScrollHandler(dom.mobileInlineLyricsScroll, () => dom.mobileInlineLyricsContent?.querySelector(".current"));
 
+    if (dom.lyricsContent) {
+        dom.lyricsContent.addEventListener("click", handleLyricLineClick);
+    }
+    if (dom.mobileInlineLyricsContent) {
+        dom.mobileInlineLyricsContent.addEventListener("click", handleLyricLineClick);
+    }
+
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {
             flushPlaylistSyncQueue();
@@ -2863,6 +2908,18 @@ function updateCurrentSongInfo(song, options = {}) {
     // 修复艺人名称显示问题 - 使用正确的字段名
     const artistText = Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '未知艺术家');
     dom.currentSongArtist.textContent = artistText;
+
+    const songTitleForTab = typeof song.name === "string" ? song.name.trim() : "";
+    const artistTitleForTab = typeof artistText === "string" ? artistText.trim() : "";
+    const titleParts = [];
+    if (songTitleForTab) {
+        titleParts.push(songTitleForTab);
+    }
+    if (artistTitleForTab) {
+        titleParts.push(artistTitleForTab);
+    }
+    setTabTitleBase(titleParts.join(" - "));
+    setTabTitleLyric("");
 
     cancelDeferredPaletteUpdate();
 
@@ -3364,6 +3421,7 @@ function removeFromPlaylist(index) {
             dom.audioPlayer.src = "";
             state.currentTrackIndex = -1;
             state.currentSong = null;
+            setTabTitleBase("");
             state.currentAudioUrl = null;
             state.currentPlaybackTime = 0;
             state.lastSavedPlaybackTime = 0;
@@ -3427,6 +3485,7 @@ function clearPlaylist() {
         dom.audioPlayer.src = "";
         state.currentTrackIndex = -1;
         state.currentSong = null;
+        setTabTitleBase("");
         state.currentAudioUrl = null;
         state.currentPlaybackTime = 0;
         state.lastSavedPlaybackTime = 0;
@@ -3852,6 +3911,7 @@ async function loadLyrics(song) {
             dom.lyrics.dataset.placeholder = "message";
             state.lyricsData = [];
             state.currentLyricLine = -1;
+            setTabTitleLyric("");
         }
     } catch (error) {
         console.error("加载歌词失败:", error);
@@ -3860,6 +3920,7 @@ async function loadLyrics(song) {
         dom.lyrics.dataset.placeholder = "message";
         state.lyricsData = [];
         state.currentLyricLine = -1;
+        setTabTitleLyric("");
     }
 }
 
@@ -3883,7 +3944,9 @@ function parseLyrics(lyricText) {
         }
     });
 
+    state.currentLyricLine = -1;
     state.lyricsData = lyrics.sort((a, b) => a.time - b.time);
+    setTabTitleLyric("");
     displayLyrics();
 }
 
@@ -3900,6 +3963,7 @@ function clearLyricsContent() {
     setLyricsContentHtml("");
     state.lyricsData = [];
     state.currentLyricLine = -1;
+    setTabTitleLyric("");
     if (isMobileView) {
         closeMobileInlineLyrics({ force: true });
     }
@@ -3937,6 +4001,11 @@ function syncLyrics() {
     if (currentIndex !== state.currentLyricLine) {
         state.currentLyricLine = currentIndex;
 
+        const activeLyric = currentIndex >= 0 && currentIndex < state.lyricsData.length
+            ? state.lyricsData[currentIndex]
+            : null;
+        setTabTitleLyric(activeLyric ? activeLyric.text : "");
+
         const lyricTargets = [];
         if (dom.lyricsContent) {
             lyricTargets.push({
@@ -3966,6 +4035,27 @@ function syncLyrics() {
             });
         });
     }
+}
+
+function handleLyricLineClick(event) {
+    if (!event || !event.target || typeof event.target.closest !== "function") {
+        return;
+    }
+    const lyricElement = event.target.closest("div[data-time]");
+    if (!lyricElement) {
+        return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const time = Number.parseFloat(lyricElement.dataset.time);
+    if (!Number.isFinite(time)) {
+        return;
+    }
+    clearTimeout(state.lyricsScrollTimeout);
+    state.lyricsScrollTimeout = null;
+    state.userScrolledLyrics = false;
+    seekAudio(time);
+    syncLyrics();
 }
 
 // 新增：滚动到当前歌词 - 修复居中显示问题
