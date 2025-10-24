@@ -680,6 +680,80 @@ body.mobile-view .playlist-header-actions {
     gap: 10px;
 }
 
+body.mobile-view .playlist-selector {
+    flex: 1 1 100%;
+}
+
+body.mobile-view .playlist-selector__button {
+    width: 100%;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-radius: 14px;
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+body.mobile-view .playlist-selector__button span {
+    max-width: calc(100% - 24px);
+}
+
+body.mobile-view .playlist-selector__button:hover,
+body.mobile-view .playlist-selector__button:focus-visible,
+body.mobile-view .playlist-selector__button[aria-expanded="true"] {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 1);
+}
+
+body.mobile-view .playlist-selector__menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    min-width: unset;
+    width: 100%;
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(17, 24, 39, 0.95);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+}
+
+body.mobile-view .playlist-selector__item {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+body.mobile-view .playlist-selector__item-count {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+body.mobile-view .playlist-action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+body.mobile-view .playlist-action-btn:hover:not(:disabled),
+body.mobile-view .playlist-action-btn:focus-visible:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.16);
+}
+
+body.mobile-view .playlist-action-btn--danger:hover:not(:disabled),
+body.mobile-view .playlist-action-btn--danger:focus-visible:not(:disabled) {
+    background: rgba(255, 99, 71, 0.22);
+    border-color: rgba(255, 99, 71, 0.38);
+    color: #ffb39b;
+}
+
+body.mobile-view .playlist-picker {
+    left: 16px !important;
+    right: 16px !important;
+    min-width: unset;
+    width: calc(100% - 32px);
+}
+
 body.mobile-view .playlist-sync-btn {
     width: 40px;
     height: 40px;
