@@ -479,6 +479,7 @@ body.background-transitioning .background-stage__layer--transition {
     display: flex;
     gap: 8px;
     margin-left: 15px;
+    flex-wrap: wrap;
 }
 
 .action-btn {

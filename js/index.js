@@ -3079,6 +3079,13 @@ function createSearchResultItem(song, index) {
     playButton.innerHTML = '<i class="fas fa-play"></i> 播放';
     playButton.addEventListener("click", () => playSearchResult(index));
 
+    const addButton = document.createElement("button");
+    addButton.className = "action-btn add";
+    addButton.type = "button";
+    addButton.title = "添加到播放列表";
+    addButton.innerHTML = '<i class="fas fa-plus"></i> 添加';
+    addButton.addEventListener("click", () => addSearchResultToPlaylist(index));
+
     const downloadButton = document.createElement("button");
     downloadButton.className = "action-btn download";
     downloadButton.type = "button";
@@ -3111,6 +3118,7 @@ function createSearchResultItem(song, index) {
     downloadButton.appendChild(qualityMenu);
 
     actions.appendChild(playButton);
+    actions.appendChild(addButton);
     actions.appendChild(downloadButton);
 
     item.appendChild(info);
@@ -3258,18 +3266,31 @@ async function downloadWithQuality(event, index, type, quality) {
     }
 }
 
-// 修复：播放搜索结果 - 添加到播放列表而不是清空
+// 新增：将搜索结果添加到播放列表
+function addSearchResultToPlaylist(index) {
+    const song = state.searchResults[index];
+    if (!song) {
+        return;
+    }
+
+    const existingIndex = state.playlistSongs.findIndex(s => s.id === song.id && s.source === song.source);
+    if (existingIndex !== -1) {
+        showNotification("歌曲已在播放列表中", "warning");
+        return;
+    }
+
+    state.playlistSongs.push(song);
+    renderPlaylist();
+    showNotification("已添加到播放列表");
+}
+
+// 更新：播放搜索结果时保持在搜索界面
 async function playSearchResult(index) {
     const song = state.searchResults[index];
     if (!song) return;
 
     try {
-        // 立即隐藏搜索结果，显示播放界面
-        hideSearchResults();
-        dom.searchInput.value = "";
-        if (isMobileView) {
-            closeMobileSearch();
-        }
+        // 保持搜索界面，仅更新播放相关状态
 
         // 检查歌曲是否已在播放列表中
         const existingIndex = state.playlistSongs.findIndex(s => s.id === song.id && s.source === song.source);
