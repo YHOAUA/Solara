@@ -3980,6 +3980,9 @@ function createSearchResultItem(song, index) {
     const item = document.createElement("div");
     item.className = "search-result-item";
     item.dataset.index = String(index);
+    item.tabIndex = 0;
+    item.setAttribute("role", "button");
+    item.setAttribute("aria-label", `${song.name || "未知歌曲"} - 播放`);
 
     const info = document.createElement("div");
     info.className = "search-result-info";
@@ -4002,18 +4005,12 @@ function createSearchResultItem(song, index) {
     const actions = document.createElement("div");
     actions.className = "search-result-actions";
 
-    const playButton = document.createElement("button");
-    playButton.className = "action-btn play";
-    playButton.type = "button";
-    playButton.title = "播放";
-    playButton.innerHTML = '<i class="fas fa-play"></i> 播放';
-    playButton.addEventListener("click", () => playSearchResult(index));
-
     const addButton = document.createElement("button");
     addButton.className = "action-btn add";
     addButton.type = "button";
     addButton.title = "添加到播放列表";
-    addButton.innerHTML = '<i class="fas fa-plus"></i> 添加';
+    addButton.setAttribute("aria-label", "添加到播放列表");
+    addButton.innerHTML = '<i class="fas fa-plus"></i>';
     addButton.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -4025,43 +4022,18 @@ function createSearchResultItem(song, index) {
         openPlaylistPickerForSearchResult(addButton, index);
     });
 
-    const downloadButton = document.createElement("button");
-    downloadButton.className = "action-btn download";
-    downloadButton.type = "button";
-    downloadButton.title = "下载";
-    downloadButton.innerHTML = '<i class="fas fa-download"></i>';
-    downloadButton.addEventListener("click", (event) => {
-        showQualityMenu(event, index, "search");
-    });
-
-    const qualityMenu = document.createElement("div");
-    qualityMenu.className = "quality-menu";
-
-    const qualityOptions = [
-        { label: "标准音质", suffix: " (128k)", quality: "128" },
-        { label: "高音质", suffix: " (192k)", quality: "192" },
-        { label: "超高音质", suffix: " (320k)", quality: "320" },
-        { label: "无损音质", suffix: "", quality: "999" },
-    ];
-
-    qualityOptions.forEach(option => {
-        const qualityItem = document.createElement("div");
-        qualityItem.className = "quality-option";
-        qualityItem.textContent = `${option.label}${option.suffix}`;
-        qualityItem.addEventListener("click", (event) => {
-            downloadWithQuality(event, index, "search", option.quality);
-        });
-        qualityMenu.appendChild(qualityItem);
-    });
-
-    downloadButton.appendChild(qualityMenu);
-
-    actions.appendChild(playButton);
     actions.appendChild(addButton);
-    actions.appendChild(downloadButton);
 
     item.appendChild(info);
     item.appendChild(actions);
+
+    item.addEventListener("click", () => playSearchResult(index));
+    item.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            playSearchResult(index);
+        }
+    });
 
     return item;
 }
