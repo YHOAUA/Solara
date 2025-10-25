@@ -168,8 +168,44 @@
 
                 <div class="playlist active empty" id="playlist">
                     <div class="playlist-header">
-                        <div class="playlist-label" aria-hidden="true">播放列表</div>
+                        <div class="playlist-selector">
+                            <button
+                                id="playlistSelectorButton"
+                                class="playlist-selector__button"
+                                type="button"
+                                aria-haspopup="listbox"
+                                aria-expanded="false"
+                                title="切换歌单"
+                            >
+                                <span id="playlistSelectorLabel">播放列表</span>
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                            </button>
+                            <div
+                                id="playlistMenu"
+                                class="playlist-selector__menu"
+                                role="listbox"
+                                aria-labelledby="playlistSelectorButton"
+                            ></div>
+                        </div>
                         <div class="playlist-header-actions">
+                            <button
+                                id="createPlaylistBtn"
+                                class="playlist-action-btn"
+                                type="button"
+                                title="新建歌单"
+                                aria-label="新建歌单"
+                            >
+                                <i class="fas fa-plus" aria-hidden="true"></i>
+                            </button>
+                            <button
+                                id="deletePlaylistBtn"
+                                class="playlist-action-btn playlist-action-btn--danger"
+                                type="button"
+                                title="删除当前歌单"
+                                aria-label="删除当前歌单"
+                            >
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                            </button>
                             <button
                                 class="playlist-sync-btn"
                                 id="playlistSyncBtn"
