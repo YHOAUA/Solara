@@ -672,13 +672,14 @@ body.background-transitioning .background-stage__layer--transition {
     gap: 6px;
     padding: 6px 14px;
     border-radius: 999px;
-    border: 1px solid rgba(26, 188, 156, 0.25);
-    background: rgba(26, 188, 156, 0.08);
-    color: var(--text-color);
+    border: 1px solid rgba(9, 45, 39, 0.95);
+    background: rgba(9, 45, 39, 0.92);
+    color: #e8fff8;
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.02em;
     cursor: pointer;
+    box-shadow: 0 12px 28px rgba(7, 30, 27, 0.4);
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -691,9 +692,9 @@ body.background-transitioning .background-stage__layer--transition {
 
 .playlist-selector__button:hover,
 .playlist-selector__button[aria-expanded="true"] {
-    color: var(--primary-color);
-    border-color: rgba(26, 188, 156, 0.45);
-    background: rgba(26, 188, 156, 0.18);
+    color: #ffffff;
+    border-color: rgba(24, 118, 102, 0.98);
+    background: rgba(24, 118, 102, 0.98);
     transform: translateY(-1px);
 }
 
@@ -703,15 +704,16 @@ body.background-transitioning .background-stage__layer--transition {
 }
 
 .dark-mode .playlist-selector__button {
-    border-color: rgba(26, 188, 156, 0.45);
-    background: rgba(26, 188, 156, 0.22);
-    color: rgba(255, 255, 255, 0.96);
+    border-color: rgba(24, 118, 102, 0.85);
+    background: rgba(4, 26, 23, 0.92);
+    color: #d8fff5;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
 }
 
 .dark-mode .playlist-selector__button:hover,
 .dark-mode .playlist-selector__button[aria-expanded="true"] {
-    border-color: rgba(26, 188, 156, 0.65);
-    background: rgba(26, 188, 156, 0.32);
+    border-color: rgba(36, 156, 136, 0.95);
+    background: rgba(24, 118, 102, 0.92);
 }
 
 .playlist-selector__menu {
@@ -722,9 +724,9 @@ body.background-transitioning .background-stage__layer--transition {
     max-height: 260px;
     overflow-y: auto;
     border-radius: 12px;
-    border: 1px solid var(--border-color);
-    background: var(--component-bg);
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.15);
+    border: 1px solid rgba(9, 45, 39, 0.65);
+    background: rgba(5, 22, 20, 0.95);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
     padding: 6px 0;
     display: none;
     z-index: 16;
@@ -735,8 +737,8 @@ body.background-transitioning .background-stage__layer--transition {
 }
 
 .dark-mode .playlist-selector__menu {
-    border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(17, 24, 39, 0.92);
+    border-color: rgba(36, 156, 136, 0.6);
+    background: rgba(2, 14, 12, 0.96);
 }
 
 .playlist-selector__item {
@@ -747,8 +749,8 @@ body.background-transitioning .background-stage__layer--transition {
     padding: 8px 16px;
     margin: 4px 8px;
     font-size: 14px;
-    color: var(--text-color);
-    background: rgba(26, 188, 156, 0.08);
+    color: #e7fff8;
+    background: rgba(6, 28, 25, 0.92);
     border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
@@ -756,18 +758,18 @@ body.background-transitioning .background-stage__layer--transition {
 
 .playlist-selector__item:hover,
 .playlist-selector__item.active {
-    color: var(--primary-color);
-    background: rgba(26, 188, 156, 0.22);
+    color: #ffffff;
+    background: rgba(24, 118, 102, 0.9);
 }
 
 .dark-mode .playlist-selector__item {
-    color: rgba(255, 255, 255, 0.94);
-    background: rgba(26, 188, 156, 0.18);
+    color: #d6fff4;
+    background: rgba(4, 24, 21, 0.92);
 }
 
 .dark-mode .playlist-selector__item:hover,
 .dark-mode .playlist-selector__item.active {
-    background: rgba(26, 188, 156, 0.32);
+    background: rgba(24, 118, 102, 0.88);
 }
 
 .playlist-selector__item-name {
@@ -780,13 +782,12 @@ body.background-transitioning .background-stage__layer--transition {
 
 .playlist-selector__item-count {
     font-size: 12px;
-    color: var(--text-color);
-    opacity: 0.85;
+    color: rgba(218, 255, 246, 0.82);
     margin-left: 12px;
 }
 
 .dark-mode .playlist-selector__item-count {
-    color: rgba(255, 255, 255, 0.88);
+    color: rgba(210, 252, 245, 0.88);
 }
 
 .playlist-selector__empty {
@@ -854,16 +855,16 @@ body.background-transitioning .background-stage__layer--transition {
     min-width: 220px;
     max-width: min(280px, calc(100vw - 32px));
     border-radius: 12px;
-    border: 1px solid var(--border-color);
-    background: var(--component-bg);
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+    border: 1px solid rgba(9, 45, 39, 0.65);
+    background: rgba(5, 22, 20, 0.96);
+    box-shadow: 0 22px 48px rgba(0, 0, 0, 0.45);
     padding: 6px 0;
     z-index: 100;
 }
 
 .dark-mode .playlist-picker {
-    border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(17, 24, 39, 0.95);
+    border-color: rgba(36, 156, 136, 0.6);
+    background: rgba(2, 14, 12, 0.96);
 }
 
 .playlist-picker__item {
@@ -874,8 +875,8 @@ body.background-transitioning .background-stage__layer--transition {
     width: 100%;
     padding: 10px 16px;
     border: none;
-    background: rgba(26, 188, 156, 0.08);
-    color: var(--text-color);
+    background: rgba(7, 30, 27, 0.94);
+    color: #e7fff8;
     font-size: 14px;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
@@ -884,24 +885,25 @@ body.background-transitioning .background-stage__layer--transition {
 
 .playlist-picker__item:hover,
 .playlist-picker__item:focus {
-    background: rgba(26, 188, 156, 0.18);
-    color: var(--primary-color);
+    background: rgba(24, 118, 102, 0.92);
+    color: #ffffff;
 }
 
 .playlist-picker__item--active {
-    color: var(--primary-color);
-    background: rgba(26, 188, 156, 0.24);
+    color: #ffffff;
+    background: rgba(32, 146, 126, 0.94);
 }
 
 .dark-mode .playlist-picker__item {
-    background: rgba(26, 188, 156, 0.18);
-    color: rgba(255, 255, 255, 0.96);
+    background: rgba(4, 22, 20, 0.9);
+    color: #d6fff4;
 }
 
 .dark-mode .playlist-picker__item:hover,
 .dark-mode .playlist-picker__item:focus,
 .dark-mode .playlist-picker__item--active {
-    background: rgba(26, 188, 156, 0.32);
+    background: rgba(24, 118, 102, 0.88);
+    color: #ffffff;
 }
 
 .playlist-picker__item-name {
@@ -914,12 +916,11 @@ body.background-transitioning .background-stage__layer--transition {
 
 .playlist-picker__item-count {
     font-size: 12px;
-    color: var(--text-secondary-color);
-    opacity: 0.85;
+    color: rgba(218, 255, 246, 0.8);
 }
 
 .dark-mode .playlist-picker__item-count {
-    color: rgba(255, 255, 255, 0.82);
+    color: rgba(210, 252, 245, 0.85);
 }
 
 .playlist-picker__item-icon {
