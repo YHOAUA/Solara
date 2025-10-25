@@ -83,9 +83,17 @@
                 </button>
             </div>
         </div>
-        <div class="header">
-            <h1>Solara</h1>
-            <div class="theme-switch-wrapper">
+        <div class="app-toolbar" role="presentation">
+            <div class="app-toolbar__group app-toolbar__group--left">
+                <span class="app-toolbar__dot app-toolbar__dot--close" aria-hidden="true"></span>
+                <span class="app-toolbar__dot app-toolbar__dot--minimize" aria-hidden="true"></span>
+                <span class="app-toolbar__dot app-toolbar__dot--maximize" aria-hidden="true"></span>
+                <span class="app-toolbar__title">Solara</span>
+            </div>
+            <div class="app-toolbar__group app-toolbar__group--center">
+                <span class="app-toolbar__subtitle">正在播放</span>
+            </div>
+            <div class="app-toolbar__group app-toolbar__group--right">
                 <button id="themeToggleButton" class="theme-toggle-button" type="button" aria-label="切换深浅色模式">
                     <i class="fas fa-sun theme-icon theme-icon--sun" aria-hidden="true"></i>
                     <i class="fas fa-moon theme-icon theme-icon--moon" aria-hidden="true"></i>
@@ -93,185 +101,191 @@
             </div>
         </div>
 
-        <div class="search-area" id="searchArea">
-            <button type="button" class="mobile-close-btn" id="mobileSearchClose" aria-label="关闭搜索">
-                <i class="fas fa-times" aria-hidden="true"></i>
-            </button>
-            <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="搜索歌曲、歌手或专辑...">
-                <div class="source-select-wrapper" id="sourceSelectWrapper">
-                    <button id="sourceSelectButton" class="source-select-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
-                        <span id="sourceSelectLabel">网易云音乐</span>
-                        <i class="fas fa-chevron-down caret-icon" aria-hidden="true"></i>
-                    </button>
-                    <div id="sourceMenu" class="source-menu" role="listbox" aria-labelledby="sourceSelectButton"></div>
-                </div>
-                <button id="searchBtn" class="search-btn">
-                    <i class="fas fa-search"></i>
-                    <span>搜索</span>
-                </button>
-            </div>
-            <div id="searchResults" class="search-results"></div>
-        </div>
-
         <div class="main-content">
-            <div class="cover-area">
-                <div class="mobile-turntable" id="mobileTurntable">
-                    <div class="mobile-turntable__platter">
-                        <div class="album-cover" id="albumCover">
-                            <div class="placeholder">
-                                <i class="fas fa-music"></i>
+            <section class="now-playing-column" aria-label="正在播放">
+                <div class="cover-area">
+                    <div class="mobile-turntable" id="mobileTurntable">
+                        <div class="mobile-turntable__platter">
+                            <div class="album-cover" id="albumCover">
+                                <div class="placeholder">
+                                    <i class="fas fa-music"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="mobile-inline-lyrics" id="mobileInlineLyrics" aria-hidden="true">
-                    <div class="mobile-inline-lyrics__hint">
-                        <i class="fas fa-arrow-left"></i>
-                        轻触返回封面
+                    <div class="mobile-inline-lyrics" id="mobileInlineLyrics" aria-hidden="true">
+                        <div class="mobile-inline-lyrics__hint">
+                            <i class="fas fa-arrow-left"></i>
+                            轻触返回封面
+                        </div>
+                        <div class="mobile-inline-lyrics__scroll" id="mobileInlineLyricsScroll">
+                            <div class="mobile-inline-lyrics__content" id="mobileInlineLyricsContent"></div>
+                        </div>
                     </div>
-                    <div class="mobile-inline-lyrics__scroll" id="mobileInlineLyricsScroll">
-                        <div class="mobile-inline-lyrics__content" id="mobileInlineLyricsContent"></div>
-                    </div>
-                </div>
-                <div class="current-song-info">
-                    <div class="current-song-title" id="currentSongTitle">选择一首歌曲开始播放</div>
-                    <div class="current-song-artist" id="currentSongArtist">未知艺术家</div>
-                    <button class="mobile-quality-chip" id="mobileQualityToggle" type="button" aria-haspopup="menu" aria-expanded="false">
-                        <span id="mobileQualityLabel">极高音质</span>
-                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="mobile-panel" id="mobilePanel">
-                <div class="mobile-panel-header" id="mobilePanelHeader">
-                    <div class="mobile-panel-handle" aria-hidden="true"></div>
-                    <div class="mobile-panel-title" id="mobilePanelTitle">播放列表</div>
-                    <div class="mobile-panel-actions">
-                        <button
-                            id="mobileClearPlaylistBtn"
-                            class="mobile-panel-action-btn mobile-panel-clear-btn"
-                            type="button"
-                            aria-label="清空播放列表"
-                            title="清空播放列表"
-                            onclick="clearPlaylist()"
-                            hidden
-                        >
-                            <i class="fas fa-trash" aria-hidden="true"></i>
-                        </button>
-                        <button id="mobilePanelClose" class="mobile-close-btn mobile-panel-action-btn" type="button" aria-label="收起播放面板">
+                    <div class="current-song-info">
+                        <div class="current-song-title" id="currentSongTitle">选择一首歌曲开始播放</div>
+                        <div class="current-song-artist" id="currentSongArtist">未知艺术家</div>
+                        <button class="mobile-quality-chip" id="mobileQualityToggle" type="button" aria-haspopup="menu" aria-expanded="false">
+                            <span id="mobileQualityLabel">极高音质</span>
                             <i class="fas fa-chevron-down" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="playlist active empty" id="playlist">
-                    <div class="playlist-header">
-                        <div class="playlist-selector">
-                            <button
-                                id="playlistSelectorButton"
-                                class="playlist-selector__button"
-                                type="button"
-                                aria-haspopup="listbox"
-                                aria-expanded="false"
-                                title="切换歌单"
-                            >
-                                <span id="playlistSelectorLabel">播放列表</span>
+                <div class="controls">
+                    <div class="transport-controls">
+                        <button class="play-mode-btn transport-button transport-button--mode" id="playModeBtn" type="button" title="播放模式">
+                            <i class="fas fa-repeat"></i>
+                        </button>
+                        <button class="transport-button transport-button--prev" onclick="playPrevious()" type="button" title="上一曲"><i class="fas fa-backward-step"></i></button>
+                        <button class="transport-button transport-button--play" id="playPauseBtn" type="button" title="播放 / 暂停"><i class="fas fa-play"></i></button>
+                        <button class="transport-button transport-button--next" onclick="playNext()" type="button" title="下一曲"><i class="fas fa-forward-step"></i></button>
+                        <button class="transport-button transport-button--queue" id="mobileQueueToggle" type="button" title="打开播放列表" aria-label="打开播放列表"><i class="fas fa-bars"></i></button>
+                    </div>
+                    <div class="progress-container">
+                        <span id="currentTimeDisplay">00:00</span>
+                        <input type="range" id="progressBar" min="0" max="0" step="0.1" value="0">
+                        <span id="durationDisplay">00:00</span>
+                    </div>
+                    <div class="audio-tools">
+                        <div class="player-quality">
+                            <button id="qualityToggle" class="player-quality-btn" type="button">
+                                <span id="qualityLabel">极高音质</span>
+                            </button>
+                            <div id="playerQualityMenu" class="player-quality-menu"></div>
+                        </div>
+                        <div class="volume-container">
+                            <i id="volumeIcon" class="fas fa-volume-up"></i>
+                            <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8">
+                        </div>
+                    </div>
+                    <button id="loadOnlineBtn" title="聚合所有雷达，探索新音乐">
+                        <span class="btn-text"><i class="fas fa-satellite-dish"></i> 探索雷达</span>
+                        <span class="loader" style="display: none;"></span>
+                    </button>
+                </div>
+            </section>
+
+            <aside class="side-panel" aria-label="曲库与歌词">
+                <div class="search-area" id="searchArea">
+                    <button type="button" class="mobile-close-btn" id="mobileSearchClose" aria-label="关闭搜索">
+                        <i class="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                    <div class="search-container">
+                        <input type="text" id="searchInput" class="search-input" placeholder="搜索歌曲、歌手或专辑...">
+                        <div class="source-select-wrapper" id="sourceSelectWrapper">
+                            <button id="sourceSelectButton" class="source-select-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                <span id="sourceSelectLabel">网易云音乐</span>
                                 <i class="fas fa-chevron-down" aria-hidden="true"></i>
                             </button>
-                            <div
-                                id="playlistMenu"
-                                class="playlist-selector__menu"
-                                role="listbox"
-                                aria-labelledby="playlistSelectorButton"
-                            ></div>
+                            <div id="sourceMenu" class="source-menu" role="listbox" aria-labelledby="sourceSelectButton"></div>
                         </div>
-                        <div class="playlist-header-actions">
-                            <button
-                                id="createPlaylistBtn"
-                                class="playlist-action-btn"
-                                type="button"
-                                title="新建歌单"
-                                aria-label="新建歌单"
-                            >
-                                <i class="fas fa-plus" aria-hidden="true"></i>
-                            </button>
-                            <button
-                                id="importPlaylistBtn"
-                                class="playlist-action-btn"
-                                type="button"
-                                title="导入网易云歌单"
-                                aria-label="导入网易云歌单"
-                            >
-                                <i class="fas fa-cloud-download-alt" aria-hidden="true"></i>
-                            </button>
-                            <button
-                                id="deletePlaylistBtn"
-                                class="playlist-action-btn playlist-action-btn--danger"
-                                type="button"
-                                title="删除当前歌单"
-                                aria-label="删除当前歌单"
-                            >
-                                <i class="fas fa-trash" aria-hidden="true"></i>
-                            </button>
-                            <button
-                                class="playlist-sync-btn"
-                                id="playlistSyncBtn"
-                                type="button"
-                                title="复制云同步链接"
-                                aria-label="复制云同步链接"
-                                disabled
-                            >
-                                <i class="fas fa-cloud"></i>
-                            </button>
-                        </div>
+                        <button id="searchBtn" class="search-btn">
+                            <i class="fas fa-search"></i>
+                            <span>搜索</span>
+                        </button>
                     </div>
-                    <div class="playlist-sync-status" id="playlistSyncStatus" role="status" aria-live="polite"></div>
-                    <div class="playlist-empty-hint">点击“探索雷达”加载在线音乐</div>
-                    <div class="playlist-scroll">
-                        <div class="playlist-items" id="playlistItems"></div>
-                    </div>
+                    <div id="searchResults" class="search-results"></div>
                 </div>
-                <div class="lyrics empty" id="lyrics" data-placeholder="default">
-                    <div class="lyrics-scroll" id="lyricsScroll">
-                        <div class="lyrics-content" id="lyricsContent"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="controls">
-            <div class="transport-controls">
-                <button class="play-mode-btn transport-button transport-button--mode" id="playModeBtn" type="button" title="播放模式">
-                    <i class="fas fa-repeat"></i>
-                </button>
-                <button class="transport-button transport-button--prev" onclick="playPrevious()" type="button" title="上一曲"><i class="fas fa-backward-step"></i></button>
-                <button class="transport-button transport-button--play" id="playPauseBtn" type="button" title="播放 / 暂停"><i class="fas fa-play"></i></button>
-                <button class="transport-button transport-button--next" onclick="playNext()" type="button" title="下一曲"><i class="fas fa-forward-step"></i></button>
-                <button class="transport-button transport-button--queue" id="mobileQueueToggle" type="button" title="打开播放列表" aria-label="打开播放列表"><i class="fas fa-bars"></i></button>
-            </div>
-            <div class="progress-container">
-                <span id="currentTimeDisplay">00:00</span>
-                <input type="range" id="progressBar" min="0" max="0" step="0.1" value="0">
-                <span id="durationDisplay">00:00</span>
-            </div>
-            <div class="audio-tools">
-                <div class="player-quality">
-                    <button id="qualityToggle" class="player-quality-btn" type="button">
-                        <span id="qualityLabel">极高音质</span>
-                    </button>
-                    <div id="playerQualityMenu" class="player-quality-menu"></div>
+                <div class="side-panel__body">
+                    <div class="mobile-panel" id="mobilePanel">
+                        <div class="mobile-panel-header" id="mobilePanelHeader">
+                            <div class="mobile-panel-handle" aria-hidden="true"></div>
+                            <div class="mobile-panel-title" id="mobilePanelTitle">播放列表</div>
+                            <div class="mobile-panel-actions">
+                                <button
+                                    id="mobileClearPlaylistBtn"
+                                    class="mobile-panel-action-btn mobile-panel-clear-btn"
+                                    type="button"
+                                    aria-label="清空播放列表"
+                                    title="清空播放列表"
+                                    onclick="clearPlaylist()"
+                                    hidden
+                                >
+                                    <i class="fas fa-trash" aria-hidden="true"></i>
+                                </button>
+                                <button id="mobilePanelClose" class="mobile-close-btn mobile-panel-action-btn" type="button" aria-label="收起播放面板">
+                                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="playlist active empty" id="playlist">
+                            <div class="playlist-header">
+                                <div class="playlist-selector">
+                                    <button
+                                        id="playlistSelectorButton"
+                                        class="playlist-selector__button"
+                                        type="button"
+                                        aria-haspopup="listbox"
+                                        aria-expanded="false"
+                                        title="切换歌单"
+                                    >
+                                        <span id="playlistSelectorLabel">播放列表</span>
+                                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                    </button>
+                                    <div
+                                        id="playlistMenu"
+                                        class="playlist-selector__menu"
+                                        role="listbox"
+                                        aria-labelledby="playlistSelectorButton"
+                                    ></div>
+                                </div>
+                                <div class="playlist-header-actions">
+                                    <button
+                                        id="createPlaylistBtn"
+                                        class="playlist-action-btn"
+                                        type="button"
+                                        title="新建歌单"
+                                        aria-label="新建歌单"
+                                    >
+                                        <i class="fas fa-plus" aria-hidden="true"></i>
+                                    </button>
+                                    <button
+                                        id="importPlaylistBtn"
+                                        class="playlist-action-btn"
+                                        type="button"
+                                        title="导入网易云歌单"
+                                        aria-label="导入网易云歌单"
+                                    >
+                                        <i class="fas fa-cloud-download-alt" aria-hidden="true"></i>
+                                    </button>
+                                    <button
+                                        id="deletePlaylistBtn"
+                                        class="playlist-action-btn playlist-action-btn--danger"
+                                        type="button"
+                                        title="删除当前歌单"
+                                        aria-label="删除当前歌单"
+                                    >
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
+                                    </button>
+                                    <button
+                                        class="playlist-sync-btn"
+                                        id="playlistSyncBtn"
+                                        type="button"
+                                        title="复制云同步链接"
+                                        aria-label="复制云同步链接"
+                                        disabled
+                                    >
+                                        <i class="fas fa-cloud"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="playlist-sync-status" id="playlistSyncStatus" role="status" aria-live="polite"></div>
+                            <div class="playlist-empty-hint">点击“探索雷达”加载在线音乐</div>
+                            <div class="playlist-scroll">
+                                <div class="playlist-items" id="playlistItems"></div>
+                            </div>
+                        </div>
+                        <div class="lyrics empty" id="lyrics" data-placeholder="default">
+                            <div class="lyrics-scroll" id="lyricsScroll">
+                                <div class="lyrics-content" id="lyricsContent"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="volume-container">
-                    <i id="volumeIcon" class="fas fa-volume-up"></i>
-                    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8">
-                </div>
-            </div>
-            <button id="loadOnlineBtn" title="聚合所有雷达，探索新音乐">
-                <span class="btn-text"><i class="fas fa-satellite-dish"></i> 探索雷达</span>
-                <span class="loader" style="display: none;"></span>
-            </button>
+            </aside>
         </div>
     </div>
 
@@ -279,22 +293,22 @@
 
     <audio id="audioPlayer"></audio>
 
-<!-- 通知容器 -->
-<div id="notification" class="notification"></div>
+    <!-- 通知容器 -->
+    <div id="notification" class="notification"></div>
 
-<!-- 调试信息容器 -->
-<div id="debugInfo" class="debug-info"></div>
+    <!-- 调试信息容器 -->
+    <div id="debugInfo" class="debug-info"></div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="js/index.js"></script>
-<script>
-    if (window.__SOLARA_IS_MOBILE) {
-        const mobileScript = document.createElement('script');
-        mobileScript.src = 'js/mobile.js';
-        mobileScript.async = false;
-        mobileScript.defer = false;
-        document.body.appendChild(mobileScript);
-    }
-</script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/index.js"></script>
+    <script>
+        if (window.__SOLARA_IS_MOBILE) {
+            const mobileScript = document.createElement('script');
+            mobileScript.src = 'js/mobile.js';
+            mobileScript.async = false;
+            mobileScript.defer = false;
+            document.body.appendChild(mobileScript);
+        }
+    </script>
 </body>
 </html>

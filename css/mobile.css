@@ -152,6 +152,10 @@ body.mobile-view .mobile-toolbar__button:hover {
     border-color: rgba(255, 255, 255, 0.28);
 }
 
+body.mobile-view .app-toolbar {
+    display: none;
+}
+
 body.mobile-view .main-content {
     display: flex;
     flex-direction: column;
@@ -160,6 +164,16 @@ body.mobile-view .main-content {
     flex: 1 1 auto;
     justify-content: flex-start;
     min-height: 0;
+}
+
+body.mobile-view .now-playing-column {
+    display: contents;
+}
+
+body.mobile-view .side-panel,
+body.mobile-view .side-panel__body {
+    display: contents;
+    transform: none;
 }
 
 body.mobile-view .cover-area {
