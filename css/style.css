@@ -140,7 +140,7 @@ body.background-transitioning .background-stage__layer--transition {
     padding: 44px 48px 40px;
     box-shadow: 0 32px 80px rgba(28, 28, 30, 0.16);
     border: 1px solid rgba(255, 255, 255, 0.55);
-    min-height: clamp(680px, 85vh, 880px);
+    min-height: clamp(520px, 80vh, 880px);
     display: flex;
     flex-direction: column;
     gap: 32px;
@@ -236,6 +236,9 @@ html.desktop-view .container.search-mode .side-panel__body {
     gap: 28px;
     min-height: 0;
     flex: 1 1 auto;
+    max-width: 540px;
+    width: 100%;
+    margin: 0;
 }
 
 .side-panel {
@@ -254,6 +257,8 @@ html.desktop-view .container.search-mode .side-panel__body {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
+    flex-direction: column;
+    width: 100%;
 }
 
 html.desktop-view .mobile-panel {
@@ -261,6 +266,7 @@ html.desktop-view .mobile-panel {
     grid-template-rows: auto minmax(0, 0.58fr) minmax(0, 0.42fr);
     gap: 24px;
     height: 100%;
+    width: 100%;
     flex: 1 1 auto;
     min-height: 0;
 }
@@ -641,11 +647,13 @@ html.desktop-view .mobile-panel-title {
 /* 主要内容区域 */
 .main-content {
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
     gap: 32px;
     flex: 1 1 auto;
     min-height: 0;
+    align-items: flex-start;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
 }
 
 /* 音乐封面区域 */
@@ -780,6 +788,35 @@ html.desktop-view .mobile-panel-title {
 .dark-mode .container.search-mode .search-area {
     background: rgba(44, 44, 46, 0.85);
     border-color: rgba(var(--primary-rgb), 0.4);
+}
+
+@media (max-width: 1180px) {
+    .container {
+        padding: 32px clamp(20px, 4vw, 36px) 36px;
+        min-height: auto;
+        overflow: visible;
+    }
+
+    .app-toolbar {
+        padding: 0 clamp(4px, 2vw, 12px) 10px;
+    }
+
+    .main-content {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+    }
+
+    .now-playing-column,
+    .side-panel {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+    }
+
+    .controls,
+    .cover-area {
+        max-width: none;
+    }
 }
 
 .playlist-header {
