@@ -424,35 +424,10 @@ body.background-transitioning .background-stage__layer--transition {
 }
 
 .search-btn {
-    background: linear-gradient(135deg, #ff2d55 0%, #ff5e7a 100%);
-    color: #ffffff;
-    border: none;
-    border-radius: 999px;
-    padding: 12px 28px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 18px 36px rgba(var(--primary-rgb), 0.28);
+    display: none;
 }
 
-.search-btn:hover {
-    background: linear-gradient(135deg, #ff3a63 0%, #ff6b86 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 22px 40px rgba(var(--primary-rgb), 0.32);
-}
 
-.search-btn:disabled {
-    background: rgba(110, 110, 125, 0.18);
-    color: rgba(110, 110, 125, 0.8);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
 
 /* 搜索结果区域 - 增强动效 */
 .search-results {
@@ -570,6 +545,11 @@ body.background-transitioning .background-stage__layer--transition {
     .search-result-actions {
         opacity: 1;
         transform: none;
+    }
+
+    .controls button {
+        width: 52px;
+        height: 52px;
     }
 }
 
@@ -1343,17 +1323,24 @@ html.mobile-view .playlist-label {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(16px, 2vw, 28px);
+    gap: clamp(10px, 1.6vw, 20px);
     flex-wrap: wrap;
-    padding: clamp(14px, 1.8vw, 22px) clamp(20px, 3vw, 32px);
+    padding: clamp(12px, 1.5vw, 18px) clamp(18px, 2.6vw, 26px);
     background: none;
     border: none;
     border-radius: 28px;
     box-shadow: none;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    width: min(100%, 960px);
-    margin: 0 auto;
-    justify-self: center;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+    justify-self: stretch;
+}
+
+.controls > * {
+    flex: 0 1 auto;
+    min-width: 0;
 }
 .controls button {
     background: linear-gradient(135deg, #ff2d55 0%, #ff5e7a 100%);
@@ -1362,8 +1349,8 @@ html.mobile-view .playlist-label {
     border-radius: 50%;
     cursor: pointer;
     font-size: 1.2em;
-    width: 50px;
-    height: 50px;
+    width: clamp(46px, 4vw, 52px);
+    height: clamp(46px, 4vw, 52px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1381,10 +1368,12 @@ html.mobile-view .playlist-label {
 .controls button#loadOnlineBtn {
     width: auto;
     border-radius: 999px;
-    padding: 0 28px;
-    gap: 12px;
+    padding: 0 22px;
+    gap: 10px;
     font-weight: 600;
     letter-spacing: 0.01em;
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 .controls button:disabled {
     background: rgba(110, 110, 125, 0.25);
@@ -1397,11 +1386,6 @@ html.mobile-view .playlist-label {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(232, 232, 240, 0.7);
-    box-shadow: 0 12px 24px rgba(15, 15, 35, 0.08);
 }
 
 html:not(.mobile-view) #playModeBtn {
@@ -1423,12 +1407,7 @@ html:not(.mobile-view) #playModeBtn {
     align-items: center;
     gap: 12px;
     flex: 1 1 320px;
-    min-width: 260px;
-    padding: 12px 16px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(232, 232, 240, 0.7);
-    box-shadow: 0 12px 24px rgba(15, 15, 35, 0.08);
+    min-width: 220px;
 }
 
 .progress-container span {
@@ -1451,11 +1430,6 @@ html:not(.mobile-view) #playModeBtn {
     align-items: center;
     gap: 20px;
     flex-wrap: wrap;
-    padding: 10px 16px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(232, 232, 240, 0.7);
-    box-shadow: 0 12px 24px rgba(15, 15, 35, 0.08);
 }
 
 .volume-container {
@@ -1518,7 +1492,7 @@ input[type="range"]:active::-moz-range-thumb {
     padding: 10px 16px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    background: var(--component-bg);
+    background: transparent;
     color: var(--text-color);
     font-size: 0.9em;
     font-weight: 500;
@@ -1533,8 +1507,8 @@ input[type="range"]:active::-moz-range-thumb {
 .controls .player-quality-btn.active {
     border-color: var(--primary-color);
     color: var(--primary-color);
-    box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.25);
-    background: var(--component-bg);
+    box-shadow: none;
+    background: rgba(var(--primary-rgb), 0.12);
 }
 
 .player-quality-menu {
