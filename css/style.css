@@ -672,9 +672,9 @@ body.background-transitioning .background-stage__layer--transition {
     gap: 6px;
     padding: 6px 14px;
     border-radius: 999px;
-    border: 1px solid var(--border-color);
-    background: transparent;
-    color: var(--text-secondary-color);
+    border: 1px solid rgba(26, 188, 156, 0.25);
+    background: rgba(26, 188, 156, 0.08);
+    color: var(--text-color);
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -693,7 +693,7 @@ body.background-transitioning .background-stage__layer--transition {
 .playlist-selector__button[aria-expanded="true"] {
     color: var(--primary-color);
     border-color: rgba(26, 188, 156, 0.45);
-    background: rgba(26, 188, 156, 0.12);
+    background: rgba(26, 188, 156, 0.18);
     transform: translateY(-1px);
 }
 
@@ -703,15 +703,15 @@ body.background-transitioning .background-stage__layer--transition {
 }
 
 .dark-mode .playlist-selector__button {
-    border-color: rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text-secondary-color);
+    border-color: rgba(26, 188, 156, 0.45);
+    background: rgba(26, 188, 156, 0.22);
+    color: rgba(255, 255, 255, 0.96);
 }
 
 .dark-mode .playlist-selector__button:hover,
 .dark-mode .playlist-selector__button[aria-expanded="true"] {
-    border-color: var(--primary-color);
-    background: rgba(26, 188, 156, 0.18);
+    border-color: rgba(26, 188, 156, 0.65);
+    background: rgba(26, 188, 156, 0.32);
 }
 
 .playlist-selector__menu {
@@ -745,8 +745,11 @@ body.background-transitioning .background-stage__layer--transition {
     justify-content: space-between;
     gap: 12px;
     padding: 8px 16px;
+    margin: 4px 8px;
     font-size: 14px;
     color: var(--text-color);
+    background: rgba(26, 188, 156, 0.08);
+    border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
@@ -754,16 +757,17 @@ body.background-transitioning .background-stage__layer--transition {
 .playlist-selector__item:hover,
 .playlist-selector__item.active {
     color: var(--primary-color);
-    background: rgba(26, 188, 156, 0.18);
+    background: rgba(26, 188, 156, 0.22);
 }
 
 .dark-mode .playlist-selector__item {
-    color: rgba(255, 255, 255, 0.92);
+    color: rgba(255, 255, 255, 0.94);
+    background: rgba(26, 188, 156, 0.18);
 }
 
 .dark-mode .playlist-selector__item:hover,
 .dark-mode .playlist-selector__item.active {
-    background: rgba(26, 188, 156, 0.28);
+    background: rgba(26, 188, 156, 0.32);
 }
 
 .playlist-selector__item-name {
@@ -776,13 +780,13 @@ body.background-transitioning .background-stage__layer--transition {
 
 .playlist-selector__item-count {
     font-size: 12px;
-    color: var(--text-secondary-color);
-    opacity: 0.8;
+    color: var(--text-color);
+    opacity: 0.85;
     margin-left: 12px;
 }
 
 .dark-mode .playlist-selector__item-count {
-    color: rgba(255, 255, 255, 0.72);
+    color: rgba(255, 255, 255, 0.88);
 }
 
 .playlist-selector__empty {
@@ -870,8 +874,8 @@ body.background-transitioning .background-stage__layer--transition {
     width: 100%;
     padding: 10px 16px;
     border: none;
-    background: transparent;
-    color: var(--text-secondary-color);
+    background: rgba(26, 188, 156, 0.08);
+    color: var(--text-color);
     font-size: 14px;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
@@ -880,19 +884,24 @@ body.background-transitioning .background-stage__layer--transition {
 
 .playlist-picker__item:hover,
 .playlist-picker__item:focus {
-    background: rgba(26, 188, 156, 0.12);
+    background: rgba(26, 188, 156, 0.18);
     color: var(--primary-color);
 }
 
 .playlist-picker__item--active {
     color: var(--primary-color);
-    background: rgba(26, 188, 156, 0.12);
+    background: rgba(26, 188, 156, 0.24);
+}
+
+.dark-mode .playlist-picker__item {
+    background: rgba(26, 188, 156, 0.18);
+    color: rgba(255, 255, 255, 0.96);
 }
 
 .dark-mode .playlist-picker__item:hover,
 .dark-mode .playlist-picker__item:focus,
 .dark-mode .playlist-picker__item--active {
-    background: rgba(26, 188, 156, 0.18);
+    background: rgba(26, 188, 156, 0.32);
 }
 
 .playlist-picker__item-name {
@@ -905,7 +914,12 @@ body.background-transitioning .background-stage__layer--transition {
 
 .playlist-picker__item-count {
     font-size: 12px;
-    opacity: 0.7;
+    color: var(--text-secondary-color);
+    opacity: 0.85;
+}
+
+.dark-mode .playlist-picker__item-count {
+    color: rgba(255, 255, 255, 0.82);
 }
 
 .playlist-picker__item-icon {

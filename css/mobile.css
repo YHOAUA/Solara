@@ -689,9 +689,10 @@ body.mobile-view .playlist-selector__button {
     justify-content: space-between;
     padding: 10px 16px;
     border-radius: 14px;
-    border-color: rgba(255, 255, 255, 0.22);
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(26, 188, 156, 0.55);
+    background: rgba(26, 188, 156, 0.32);
+    color: #0f1b18;
+    box-shadow: 0 12px 24px rgba(26, 188, 156, 0.24);
 }
 
 body.mobile-view .playlist-selector__button span {
@@ -701,9 +702,9 @@ body.mobile-view .playlist-selector__button span {
 body.mobile-view .playlist-selector__button:hover,
 body.mobile-view .playlist-selector__button:focus-visible,
 body.mobile-view .playlist-selector__button[aria-expanded="true"] {
-    border-color: rgba(255, 255, 255, 0.32);
-    background: rgba(255, 255, 255, 0.16);
-    color: rgba(255, 255, 255, 1);
+    border-color: rgba(26, 188, 156, 0.75);
+    background: rgba(26, 188, 156, 0.42);
+    color: #052721;
 }
 
 body.mobile-view .playlist-selector__menu {
@@ -712,17 +713,26 @@ body.mobile-view .playlist-selector__menu {
     right: 0;
     min-width: unset;
     width: 100%;
-    border-color: rgba(255, 255, 255, 0.18);
-    background: rgba(17, 24, 39, 0.95);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(26, 188, 156, 0.45);
+    background: rgba(5, 11, 16, 0.92);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
 }
 
 body.mobile-view .playlist-selector__item {
-    color: rgba(255, 255, 255, 0.92);
+    color: #0d241f;
+    background: rgba(26, 188, 156, 0.32);
+    border-radius: 12px;
+    margin: 4px 8px;
+}
+
+body.mobile-view .playlist-selector__item:hover,
+body.mobile-view .playlist-selector__item.active {
+    background: rgba(26, 188, 156, 0.46);
+    color: #031713;
 }
 
 body.mobile-view .playlist-selector__item-count {
-    color: rgba(255, 255, 255, 0.72);
+    color: #0b322b;
 }
 
 body.mobile-view .playlist-action-btn {
@@ -752,6 +762,28 @@ body.mobile-view .playlist-picker {
     right: 16px !important;
     min-width: unset;
     width: calc(100% - 32px);
+}
+
+body.mobile-view .playlist-picker__item {
+    background: rgba(26, 188, 156, 0.32);
+    color: #031713;
+    border-radius: 12px;
+    margin: 4px 0;
+}
+
+body.mobile-view .playlist-picker__item:hover,
+body.mobile-view .playlist-picker__item:focus {
+    background: rgba(26, 188, 156, 0.46);
+    color: #031713;
+}
+
+body.mobile-view .playlist-picker__item--active {
+    background: rgba(26, 188, 156, 0.54);
+    color: #02100d;
+}
+
+body.mobile-view .playlist-picker__item-count {
+    color: #063028;
 }
 
 body.mobile-view .playlist-sync-btn {
