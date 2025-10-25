@@ -325,6 +325,27 @@ function safeRemoveLocalStorage(key) {
     }
 }
 
+function getLastImportedNeteasePlaylistId() {
+    const stored = safeGetLocalStorage(NETEASE_IMPORT_HISTORY_KEY);
+    if (typeof stored !== "string") {
+        return "";
+    }
+    return stored.trim();
+}
+
+function persistLastImportedNeteasePlaylistId(id) {
+    if (typeof id !== "string") {
+        safeRemoveLocalStorage(NETEASE_IMPORT_HISTORY_KEY);
+        return;
+    }
+    const normalized = id.trim();
+    if (!normalized) {
+        safeRemoveLocalStorage(NETEASE_IMPORT_HISTORY_KEY);
+        return;
+    }
+    safeSetLocalStorage(NETEASE_IMPORT_HISTORY_KEY, normalized);
+}
+
 function parseJSON(value, fallback) {
     if (!value) return fallback;
     try {
@@ -484,6 +505,7 @@ const ACTIVE_PLAYLIST_ID_STORAGE_KEY = "activePlaylistId.v1";
 const DEFAULT_PLAYLIST_NAME = "默认歌单";
 const MAX_PLAYLIST_NAME_LENGTH = 40;
 const MAX_NETEASE_IMPORT_TRACKS = 500;
+const NETEASE_IMPORT_HISTORY_KEY = "neteaseLastPlaylistId";
 
 const playlistSync = {
     id: savedPlaylistSyncMeta?.id || null,
@@ -1874,7 +1896,8 @@ async function handleImportNeteasePlaylist() {
     closePlaylistPicker();
     closePlaylistMenu();
 
-    const userInput = window.prompt("输入网易云歌单链接或ID", "");
+    const lastImportId = getLastImportedNeteasePlaylistId();
+    const userInput = window.prompt("输入网易云歌单链接或ID", lastImportId || "");
     if (userInput === null) {
         return;
     }
@@ -1884,6 +1907,8 @@ async function handleImportNeteasePlaylist() {
         showNotification("请输入有效的网易云歌单链接或ID", "error");
         return;
     }
+
+    persistLastImportedNeteasePlaylistId(playlistId);
 
     const button = dom.importPlaylistBtn;
     let originalButtonHtml = null;

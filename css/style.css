@@ -929,12 +929,14 @@ html.desktop-view .playlist-header {
     max-height: 260px;
     overflow-y: auto;
     border-radius: 12px;
-    border: 1px solid var(--border-color);
-    background: var(--component-bg);
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.15);
+    border: 1px solid rgba(28, 28, 30, 0.14);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.2);
     padding: 6px 0;
     display: none;
     z-index: 16;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 }
 
 .playlist-selector__menu.show {
@@ -942,8 +944,9 @@ html.desktop-view .playlist-header {
 }
 
 .dark-mode .playlist-selector__menu {
-    border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(17, 24, 39, 0.92);
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(17, 24, 39, 0.96);
+    box-shadow: 0 24px 52px rgba(0, 0, 0, 0.45);
 }
 
 .playlist-selector__item {
@@ -951,26 +954,34 @@ html.desktop-view .playlist-header {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 8px 16px;
+    padding: 10px 18px;
     font-size: 14px;
-    color: var(--text-color);
+    font-weight: 500;
+    line-height: 1.45;
+    color: rgba(28, 28, 30, 0.9);
     cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    border-radius: 8px;
+    background: transparent;
 }
 
 .playlist-selector__item:hover,
 .playlist-selector__item.active {
     color: var(--primary-color);
-    background: rgba(var(--primary-rgb), 0.16);
+    background: rgba(var(--primary-rgb), 0.24);
+    box-shadow: 0 10px 22px rgba(var(--primary-rgb), 0.18);
 }
 
 .dark-mode .playlist-selector__item {
-    color: rgba(255, 255, 255, 0.92);
+    color: rgba(255, 255, 255, 0.94);
+    background: transparent;
 }
 
 .dark-mode .playlist-selector__item:hover,
 .dark-mode .playlist-selector__item.active {
-    background: rgba(var(--primary-rgb), 0.28);
+    color: #ffffff;
+    background: rgba(var(--primary-rgb), 0.32);
+    box-shadow: 0 12px 28px rgba(var(--primary-rgb), 0.24);
 }
 
 .playlist-selector__item-name {
@@ -983,13 +994,14 @@ html.desktop-view .playlist-header {
 
 .playlist-selector__item-count {
     font-size: 12px;
-    color: var(--text-secondary-color);
-    opacity: 0.8;
+    color: rgba(28, 28, 30, 0.65);
+    font-weight: 500;
     margin-left: 12px;
 }
 
 .dark-mode .playlist-selector__item-count {
-    color: rgba(255, 255, 255, 0.72);
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 500;
 }
 
 .playlist-selector__empty {
@@ -1057,16 +1069,24 @@ html.desktop-view .playlist-header {
     min-width: 220px;
     max-width: min(280px, calc(100vw - 32px));
     border-radius: 12px;
-    border: 1px solid var(--border-color);
-    background: var(--component-bg);
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+    border: 1px solid rgba(28, 28, 30, 0.14);
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 22px 54px rgba(15, 23, 42, 0.24);
     padding: 6px 0;
     z-index: 100;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
 
 .dark-mode .playlist-picker {
-    border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(17, 24, 39, 0.95);
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(17, 24, 39, 0.97);
+    box-shadow: 0 26px 58px rgba(0, 0, 0, 0.52);
+}
+
+.dark-mode .playlist-picker__item {
+    color: rgba(255, 255, 255, 0.94);
+    background: transparent;
 }
 
 .playlist-picker__item {
@@ -1075,31 +1095,37 @@ html.desktop-view .playlist-header {
     justify-content: space-between;
     gap: 12px;
     width: 100%;
-    padding: 10px 16px;
+    padding: 12px 18px;
     border: none;
     background: transparent;
-    color: var(--text-secondary-color);
+    color: rgba(28, 28, 30, 0.9);
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
     outline: none;
+    border-radius: 8px;
 }
 
 .playlist-picker__item:hover,
 .playlist-picker__item:focus {
-    background: rgba(var(--primary-rgb), 0.12);
+    background: rgba(var(--primary-rgb), 0.18);
     color: var(--primary-color);
+    box-shadow: 0 10px 22px rgba(var(--primary-rgb), 0.2);
 }
 
 .playlist-picker__item--active {
     color: var(--primary-color);
-    background: rgba(var(--primary-rgb), 0.12);
+    background: rgba(var(--primary-rgb), 0.2);
+    box-shadow: 0 10px 22px rgba(var(--primary-rgb), 0.2);
 }
 
 .dark-mode .playlist-picker__item:hover,
 .dark-mode .playlist-picker__item:focus,
 .dark-mode .playlist-picker__item--active {
-    background: rgba(var(--primary-rgb), 0.22);
+    color: #ffffff;
+    background: rgba(var(--primary-rgb), 0.34);
+    box-shadow: 0 12px 28px rgba(var(--primary-rgb), 0.26);
 }
 
 .playlist-picker__item-name {
@@ -1112,7 +1138,13 @@ html.desktop-view .playlist-header {
 
 .playlist-picker__item-count {
     font-size: 12px;
-    opacity: 0.7;
+    color: rgba(28, 28, 30, 0.6);
+    font-weight: 500;
+}
+
+.dark-mode .playlist-picker__item-count {
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 500;
 }
 
 .playlist-picker__item-icon {
