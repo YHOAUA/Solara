@@ -1,17 +1,17 @@
 :root {
     --font-main: 'SF Pro Display', 'SF Pro Text', 'PingFang SC', 'Helvetica Neue', 'Noto Sans SC', 'Segoe UI', sans-serif;
-    --primary-rgb: 255, 45, 85;
-    --bg-gradient: radial-gradient(circle at 20% 20%, rgba(255, 110, 160, 0.25), transparent 55%),
-        radial-gradient(circle at 80% 10%, rgba(142, 108, 255, 0.18), transparent 55%),
-        linear-gradient(180deg, #f6f5ff 0%, #fdf2f8 55%, #f8f5ff 100%);
+    --primary-rgb: 83, 163, 241;
+    --bg-gradient: radial-gradient(circle at 20% 20%, rgba(83, 163, 241, 0.28), transparent 55%),
+        radial-gradient(circle at 80% 10%, rgba(37, 126, 229, 0.22), transparent 55%),
+        linear-gradient(180deg, #f2f7ff 0%, #edf5ff 55%, #f6fbff 100%);
     --bg-gradient-next: var(--bg-gradient);
     --container-bg: rgba(255, 255, 255, 0.72);
-    --container-shadow: rgba(255, 45, 85, 0.18);
+    --container-shadow: rgba(83, 163, 241, 0.18);
     --backdrop-blur: 28px;
     --text-color: #1c1c1e;
     --text-secondary-color: #6e6e73;
-    --primary-color: #ff2d55;
-    --primary-color-dark: #d91a45;
+    --primary-color: #53a3f1;
+    --primary-color-dark: #2d7bd4;
     --warning-color: #ff3b30;
     --success-color: #32d74b;
     --item-hover-bg: rgba(var(--primary-rgb), 0.08);
@@ -19,7 +19,7 @@
     --item-current-text: var(--primary-color);
     --border-color: rgba(228, 228, 236, 0.8);
     --lyrics-highlight-bg: rgba(var(--primary-rgb), 0.12);
-    --lyrics-highlight-text: #ff2d55;
+    --lyrics-highlight-text: #53a3f1;
     --lyrics-highlight-shadow: rgba(var(--primary-rgb), 0.18);
     --component-bg: rgba(255, 255, 255, 0.62);
     --scrollbar-thumb-bg: rgba(140, 140, 150, 0.35);
@@ -27,20 +27,20 @@
 }
 
 .dark-mode {
-    --bg-gradient: radial-gradient(circle at 15% 15%, rgba(var(--primary-rgb), 0.28), transparent 55%),
-        radial-gradient(circle at 90% 0%, rgba(120, 96, 255, 0.25), transparent 55%),
-        linear-gradient(180deg, #161626 0%, #090912 100%);
+    --bg-gradient: radial-gradient(circle at 15% 15%, rgba(var(--primary-rgb), 0.32), transparent 55%),
+        radial-gradient(circle at 90% 0%, rgba(21, 74, 163, 0.28), transparent 55%),
+        linear-gradient(180deg, #0b1220 0%, #050a16 100%);
     --container-bg: rgba(22, 22, 34, 0.72);
     --container-shadow: rgba(0, 0, 0, 0.45);
     --text-color: rgba(255, 255, 255, 0.92);
     --text-secondary-color: rgba(255, 255, 255, 0.64);
-    --primary-color: #ff2d55;
-    --primary-color-dark: #ff5e7a;
+    --primary-color: #53a3f1;
+    --primary-color-dark: #7cc6ff;
     --item-hover-bg: rgba(var(--primary-rgb), 0.2);
     --item-current-bg: rgba(var(--primary-rgb), 0.28);
     --border-color: rgba(255, 255, 255, 0.16);
     --lyrics-highlight-bg: rgba(var(--primary-rgb), 0.18);
-    --lyrics-highlight-text: #ff7a96;
+    --lyrics-highlight-text: #9cd6ff;
     --lyrics-highlight-shadow: rgba(var(--primary-rgb), 0.3);
     --component-bg: rgba(22, 22, 34, 0.72);
     --scrollbar-thumb-bg: rgba(255, 255, 255, 0.2);
@@ -199,10 +199,10 @@ body.background-transitioning .background-stage__layer--transition {
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.1;
-    background: linear-gradient(120deg, #ff2d55 0%, #ff5e78 35%, #ff1b68 75%);
+    background: linear-gradient(120deg, #53a3f1 0%, #6fbcff 35%, #2d7bd4 75%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    color: #ff2d55;
+    color: #53a3f1;
 }
 
 .header-subtitle {
@@ -1343,7 +1343,7 @@ html.mobile-view .playlist-label {
     min-width: 0;
 }
 .controls button {
-    background: linear-gradient(135deg, #ff2d55 0%, #ff5e7a 100%);
+    background: linear-gradient(135deg, #53a3f1 0%, #2d7bd4 100%);
     color: #ffffff;
     border: none;
     border-radius: 50%;
