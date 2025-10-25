@@ -2431,46 +2431,18 @@ function cancelDeferredPaletteUpdate() {
 
 function scheduleDeferredPaletteUpdate(imageUrl, options = {}) {
     const immediate = Boolean(options.immediate);
-    if (!imageUrl) {
-        cancelDeferredPaletteUpdate();
-        if (immediate) {
-            resetDynamicBackground();
-        }
-        return;
+    void imageUrl;
+
+    cancelDeferredPaletteUpdate();
+
+    if (paletteAbortController) {
+        paletteAbortController.abort();
+        paletteAbortController = null;
     }
 
-    if (immediate) {
-        cancelDeferredPaletteUpdate();
-        updateDynamicBackground(imageUrl);
-        return;
-    }
+    state.currentPaletteImage = null;
 
-    if (deferredPaletteHandle !== null) {
-        if (deferredPaletteType === "idle" && typeof window.cancelIdleCallback === "function") {
-            window.cancelIdleCallback(deferredPaletteHandle);
-        } else {
-            window.clearTimeout(deferredPaletteHandle);
-        }
-    }
-
-    deferredPaletteUrl = imageUrl;
-    const runner = () => {
-        deferredPaletteHandle = null;
-        deferredPaletteType = "";
-        const targetUrl = deferredPaletteUrl;
-        deferredPaletteUrl = null;
-        if (targetUrl) {
-            updateDynamicBackground(targetUrl);
-        }
-    };
-
-    if (typeof window.requestIdleCallback === "function") {
-        deferredPaletteType = "idle";
-        deferredPaletteHandle = window.requestIdleCallback(runner, { timeout: 800 });
-    } else {
-        deferredPaletteType = "timeout";
-        deferredPaletteHandle = window.setTimeout(runner, 120);
-    }
+    queueDefaultPalette({ immediate });
 }
 
 function attemptPaletteApplication() {
