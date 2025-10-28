@@ -81,6 +81,12 @@ body.mobile-view .background-stage {
         transform: scale(1.12);
         filter: saturate(112%);
     }
+
+    /* Increase panel default height in portrait mode for more content visibility */
+    body.mobile-view .mobile-panel {
+        height: calc(100dvh - clamp(70px, 26vw, 140px));
+        max-height: calc(100dvh - clamp(70px, 26vw, 140px));
+    }
 }
 
 body.mobile-view .container {
@@ -645,9 +651,9 @@ body.mobile-view .mobile-panel {
     z-index: 400;
     pointer-events: auto;
     box-shadow: 0 -28px 60px rgba(0, 0, 0, 0.6);
-    transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1);
-    height: calc(100dvh - clamp(120px, 34vw, 200px));
-    max-height: calc(100dvh - clamp(120px, 34vw, 200px));
+    transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1), height 0.4s cubic-bezier(0.33, 1, 0.68, 1), max-height 0.4s cubic-bezier(0.33, 1, 0.68, 1);
+    height: calc(100dvh - clamp(80px, 28vw, 150px));
+    max-height: calc(100dvh - clamp(80px, 28vw, 150px));
     overflow: hidden;
     overscroll-behavior: contain;
     touch-action: pan-y;
@@ -657,6 +663,18 @@ body.mobile-view .mobile-panel {
 
 body.mobile-view.mobile-panel-open .mobile-panel {
     transform: translate(-50%, 0);
+}
+
+/* Full-screen panel mode */
+body.mobile-view.mobile-panel-fullscreen .mobile-panel {
+    height: calc(100dvh - env(safe-area-inset-top) - 12px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - 12px);
+    border-radius: 20px 20px 0 0;
+    padding-top: calc(env(safe-area-inset-top) + 12px);
+}
+
+body.mobile-view.mobile-panel-fullscreen .mobile-panel-expand-btn i::before {
+    content: "\f066"; /* fa-compress icon */
 }
 
 body.mobile-view .mobile-panel-header {
@@ -739,6 +757,19 @@ body.mobile-view .mobile-panel-clear-btn:not([hidden]):focus-visible {
 
 body.mobile-view .mobile-panel-clear-btn[hidden] {
     display: none !important;
+}
+
+body.mobile-view .mobile-panel-expand-btn {
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.mobile-view .mobile-panel-expand-btn:not([hidden]):hover,
+body.mobile-view .mobile-panel-expand-btn:not([hidden]):focus-visible {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.14);
 }
 
 body.mobile-view .playlist,
@@ -888,11 +919,14 @@ body.mobile-view .playlist-items {
 }
 
 body.mobile-view .playlist-items .playlist-item {
-    padding: 12px 56px 12px 18px;
+    padding: 14px 56px 14px 16px;
     white-space: normal;
-    line-height: 1.35;
+    line-height: 1.45;
     min-height: 0;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 body.mobile-view .playlist-items .playlist-item:focus-visible {
@@ -952,6 +986,26 @@ body.mobile-view .playlist-items .playlist-item.current:active {
 
 body.mobile-view .lyrics {
     color: rgba(255, 255, 255, 0.78);
+}
+
+body.mobile-view .lyrics-content {
+    padding: 8px 12px;
+}
+
+body.mobile-view .lyrics-content div {
+    padding: 10px 8px;
+    line-height: 1.65;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+    border-radius: 10px;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+body.mobile-view .lyrics-content .current {
+    background: var(--lyrics-highlight-bg, rgba(243, 162, 91, 0.18));
+    color: var(--lyrics-highlight-text, #f3a25b);
+    font-weight: 600;
+    padding: 12px 10px;
 }
 
 body.mobile-view .lyrics-scroll {
@@ -1170,7 +1224,12 @@ body.mobile-view .debug-info {
     }
 
     body.mobile-view .mobile-panel {
-        height: calc(100dvh - clamp(80px, 28vw, 140px));
-        max-height: calc(100dvh - clamp(80px, 28vw, 140px));
+        height: calc(100dvh - clamp(60px, 24vw, 120px));
+        max-height: calc(100dvh - clamp(60px, 24vw, 120px));
+    }
+
+    body.mobile-view.mobile-panel-fullscreen .mobile-panel {
+        height: calc(100dvh - env(safe-area-inset-top) - 8px);
+        max-height: calc(100dvh - env(safe-area-inset-top) - 8px);
     }
 }

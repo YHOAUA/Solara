@@ -46,6 +46,7 @@ const dom = {
     mobileSearchToggle: document.getElementById("mobileSearchToggle"),
     mobileSearchClose: document.getElementById("mobileSearchClose"),
     mobilePanelClose: document.getElementById("mobilePanelClose"),
+    mobilePanelExpand: document.getElementById("mobilePanelExpand"),
     mobileClearPlaylistBtn: document.getElementById("mobileClearPlaylistBtn"),
     mobileOverlayScrim: document.getElementById("mobileOverlayScrim"),
     mobileQualityToggle: document.getElementById("mobileQualityToggle"),

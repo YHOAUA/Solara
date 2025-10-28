@@ -99,6 +99,11 @@
             return;
         }
         document.body.classList.remove("mobile-panel-open");
+        document.body.classList.remove("mobile-panel-fullscreen");
+        if (dom.mobilePanelExpand) {
+            dom.mobilePanelExpand.setAttribute("aria-label", "展开全屏");
+            dom.mobilePanelExpand.setAttribute("title", "展开全屏");
+        }
         updateMobileOverlayScrim();
     }
 
@@ -119,6 +124,26 @@
     function closeAllMobileOverlaysImpl() {
         closeMobileSearchImpl();
         closeMobilePanelImpl();
+    }
+
+    function toggleMobilePanelFullscreenImpl() {
+        if (!document.body) {
+            return;
+        }
+        const isFullscreen = document.body.classList.contains("mobile-panel-fullscreen");
+        if (isFullscreen) {
+            document.body.classList.remove("mobile-panel-fullscreen");
+            if (dom.mobilePanelExpand) {
+                dom.mobilePanelExpand.setAttribute("aria-label", "展开全屏");
+                dom.mobilePanelExpand.setAttribute("title", "展开全屏");
+            }
+        } else {
+            document.body.classList.add("mobile-panel-fullscreen");
+            if (dom.mobilePanelExpand) {
+                dom.mobilePanelExpand.setAttribute("aria-label", "退出全屏");
+                dom.mobilePanelExpand.setAttribute("title", "退出全屏");
+            }
+        }
     }
 
     function initializeMobileUIImpl() {
@@ -153,6 +178,9 @@
         }
         if (dom.mobileQueueToggle) {
             dom.mobileQueueToggle.addEventListener("click", () => openMobilePanelImpl("playlist"));
+        }
+        if (dom.mobilePanelExpand) {
+            dom.mobilePanelExpand.addEventListener("click", toggleMobilePanelFullscreenImpl);
         }
         const handleGlobalPointerDown = (event) => {
             if (!document.body) {
@@ -200,6 +228,7 @@
     bridge.handlers.closePanel = closeMobilePanelImpl;
     bridge.handlers.togglePanel = toggleMobilePanelImpl;
     bridge.handlers.closeAllOverlays = closeAllMobileOverlaysImpl;
+    bridge.handlers.togglePanelFullscreen = toggleMobilePanelFullscreenImpl;
     bridge.handlers.initialize = initializeMobileUIImpl;
 
     if (bridge.queue.length) {
