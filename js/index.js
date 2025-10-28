@@ -62,6 +62,124 @@ window.SolaraDom = dom;
 
 const isMobileView = Boolean(window.__SOLARA_IS_MOBILE);
 
+// Responsive view management
+function checkAndUpdateView() {
+    const shouldBeMobile = window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth <= 1024);
+    const currentlyMobile = document.documentElement.classList.contains('mobile-view');
+    
+    if (shouldBeMobile !== currentlyMobile && !window.__SOLARA_IS_MOBILE) {
+        // Force view update if we're not in forced mobile mode
+        if (shouldBeMobile) {
+            switchToMobileView();
+        } else {
+            switchToDesktopView();
+        }
+    }
+}
+
+function switchToMobileView() {
+    if (document.documentElement.classList.contains('mobile-view')) return;
+    
+    document.documentElement.classList.remove('desktop-view');
+    document.documentElement.classList.add('mobile-view');
+    document.body.classList.add('mobile-view');
+    
+    // Load mobile CSS if not already loaded
+    if (!document.getElementById('mobileStylesheet')) {
+        const mobileLink = document.createElement('link');
+        mobileLink.rel = 'stylesheet';
+        mobileLink.href = 'css/mobile.css';
+        mobileLink.id = 'mobileStylesheet';
+        document.head.appendChild(mobileLink);
+    }
+    
+    // Remove desktop CSS if present
+    const desktopLink = document.getElementById('desktopStylesheet');
+    if (desktopLink) {
+        desktopLink.remove();
+    }
+    
+    // Initialize mobile UI
+    if (typeof initializeMobileUI === 'function') {
+        initializeMobileUI();
+    }
+}
+
+function switchToDesktopView() {
+    if (document.documentElement.classList.contains('desktop-view')) return;
+    
+    document.documentElement.classList.remove('mobile-view');
+    document.documentElement.classList.add('desktop-view');
+    document.body.classList.remove('mobile-view');
+    
+    // Cleanup mobile UI before switching
+    invokeMobileHook("cleanup");
+    
+    // Load desktop CSS if not already loaded
+    if (!document.getElementById('desktopStylesheet')) {
+        const desktopLink = document.createElement('link');
+        desktopLink.rel = 'stylesheet';
+        desktopLink.href = 'css/desktop.css';
+        desktopLink.id = 'desktopStylesheet';
+        document.head.appendChild(desktopLink);
+    }
+    
+    // Remove mobile CSS if present
+    const mobileLink = document.getElementById('mobileStylesheet');
+    if (mobileLink) {
+        mobileLink.remove();
+    }
+}
+
+// Add resize listener for responsive behavior
+if (typeof window !== 'undefined') {
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(checkAndUpdateView, 250);
+    });
+    
+    // Initial check after page load
+    window.addEventListener('load', () => {
+        setTimeout(checkAndUpdateView, 100);
+    });
+}
+
+// Mobile viewport height management
+function updateMobileViewportHeight() {
+    if (!isMobileView && !document.documentElement.classList.contains('mobile-view')) {
+        return;
+    }
+    
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+    
+    // Also update the mobile-vh variable used in mobile.css
+    document.documentElement.style.setProperty('--mobile-vh', `${window.innerHeight}px`);
+}
+
+// Listen for viewport changes on mobile
+if (typeof window !== 'undefined') {
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            updateMobileViewportHeight();
+            checkAndUpdateView();
+        }, 100);
+    });
+    
+    // Update on visual viewport changes (for iOS Safari)
+    if (typeof window.visualViewport !== 'undefined') {
+        window.visualViewport.addEventListener('resize', () => {
+            updateMobileViewportHeight();
+        });
+    }
+    
+    // Initial viewport setup
+    window.addEventListener('load', () => {
+        updateMobileViewportHeight();
+    });
+}
+
 const mobileBridge = window.SolaraMobileBridge || {};
 mobileBridge.handlers = mobileBridge.handlers || {};
 mobileBridge.queue = Array.isArray(mobileBridge.queue) ? mobileBridge.queue : [];

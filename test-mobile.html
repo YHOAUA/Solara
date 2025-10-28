@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Solara Mobile Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        (function () {
+            // Force mobile view for testing
+            window.__SOLARA_IS_MOBILE = true;
+            document.documentElement.classList.add("mobile-view");
+            const mobileLink = document.createElement("link");
+            mobileLink.rel = "stylesheet";
+            mobileLink.href = "css/mobile.css";
+            mobileLink.id = "mobileStylesheet";
+            document.head.appendChild(mobileLink);
+            
+            // Set viewport for mobile
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+            }
+            
+            // Set initial mobile viewport height
+            document.documentElement.style.setProperty('--mobile-vh', window.innerHeight + 'px');
+        })();
+    </script>
+</head>
+<body>
+    <div class="background-stage" id="backgroundStage" aria-hidden="true">
+        <div class="background-stage__layer background-stage__layer--base" id="backgroundBaseLayer"></div>
+        <div class="background-stage__layer background-stage__layer--transition" id="backgroundTransitionLayer"></div>
+    </div>
+    <div class="container" id="mainContainer">
+        <div class="mobile-toolbar" id="mobileToolbar" role="toolbar">
+            <div class="mobile-toolbar__title" id="mobileToolbarTitle">Solara Mobile Test</div>
+            <div class="mobile-toolbar__actions">
+                <button class="mobile-toolbar__button" id="mobileSearchToggle" type="button" aria-label="打开搜索">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="search-area" id="searchArea">
+            <button type="button" class="mobile-close-btn" id="mobileSearchClose" aria-label="关闭搜索">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="搜索歌曲、歌手或专辑...">
+                <div class="source-select-wrapper" id="sourceSelectWrapper">
+                    <button id="sourceSelectButton" class="source-select-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="sourceSelectLabel">网易云音乐</span>
+                        <i class="fas fa-chevron-down caret-icon" aria-hidden="true"></i>
+                    </button>
+                    <div id="sourceMenu" class="source-menu" role="listbox" aria-labelledby="sourceSelectButton"></div>
+                </div>
+                <button id="searchBtn" class="search-btn">
+                    <i class="fas fa-search"></i>
+                    <span>搜索</span>
+                </button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="cover-area">
+                <div class="mobile-turntable" id="mobileTurntable">
+                    <div class="mobile-turntable__platter">
+                        <div class="album-cover" id="albumCover">
+                            <div class="placeholder">
+                                <i class="fas fa-music"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mobile-inline-lyrics" id="mobileInlineLyrics" aria-hidden="true">
+                    <div class="mobile-inline-lyrics__hint">
+                        <i class="fas fa-arrow-left"></i>
+                        轻触返回封面
+                    </div>
+                    <div class="mobile-inline-lyrics__scroll" id="mobileInlineLyricsScroll">
+                        <div class="mobile-inline-lyrics__content" id="mobileInlineLyricsContent"></div>
+                    </div>
+                </div>
+                <div class="current-song-info">
+                    <div class="current-song-title" id="currentSongTitle">选择一首歌曲开始播放</div>
+                    <div class="current-song-artist" id="currentSongArtist">未知艺术家</div>
+                    <button class="mobile-quality-chip" id="mobileQualityToggle" type="button" aria-haspopup="menu" aria-expanded="false">
+                        <span id="mobileQualityLabel">极高音质</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="transport-controls">
+                    <button class="play-mode-btn transport-button transport-button--mode" id="playModeBtn" type="button" title="播放模式">
+                        <i class="fas fa-repeat"></i>
+                    </button>
+                    <button class="transport-button transport-button--prev" type="button" title="上一曲"><i class="fas fa-backward-step"></i></button>
+                    <button class="transport-button transport-button--play" id="playPauseBtn" type="button" title="播放 / 暂停"><i class="fas fa-play"></i></button>
+                    <button class="transport-button transport-button--next" type="button" title="下一曲"><i class="fas fa-forward-step"></i></button>
+                    <button class="transport-button transport-button--queue" id="mobileQueueToggle" type="button" title="打开播放列表" aria-label="打开播放列表"><i class="fas fa-bars"></i></button>
+                </div>
+                <div class="progress-container">
+                    <span id="currentTimeDisplay">00:00</span>
+                    <input type="range" id="progressBar" min="0" max="0" step="0.1" value="0">
+                    <span id="durationDisplay">00:00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mobile-panel" id="mobilePanel">
+            <div class="mobile-panel-header" id="mobilePanelHeader">
+                <div class="mobile-panel-handle" aria-hidden="true"></div>
+                <div class="mobile-panel-title" id="mobilePanelTitle">播放列表</div>
+                <div class="mobile-panel-actions">
+                    <button id="mobilePanelClose" class="mobile-close-btn mobile-panel-action-btn" type="button" aria-label="收起播放面板">
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="playlist active empty" id="playlist">
+                <div class="playlist-header">
+                    <div class="playlist-selector">
+                        <button
+                            id="playlistSelectorButton"
+                            class="playlist-selector__button"
+                            type="button"
+                            aria-haspopup="listbox"
+                            aria-expanded="false"
+                            title="切换歌单"
+                        >
+                            <span id="playlistSelectorLabel">播放列表</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </button>
+                        <div
+                            id="playlistMenu"
+                            class="playlist-selector__menu"
+                            role="listbox"
+                            aria-labelledby="playlistSelectorButton"
+                        ></div>
+                    </div>
+                </div>
+                <div class="playlist-empty-hint">开始搜索音乐并添加到播放列表</div>
+                <div class="playlist-scroll">
+                    <div class="playlist-items" id="playlistItems"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mobile-overlay-scrim" id="mobileOverlayScrim"></div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/mobile.js"></script>
+    <script>
+        // Test mobile functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize mobile UI
+            if (typeof initializeMobileUI === 'function') {
+                initializeMobileUI();
+            }
+            
+            // Test toggle functions
+            const mobileSearchToggle = document.getElementById('mobileSearchToggle');
+            const mobileQueueToggle = document.getElementById('mobileQueueToggle');
+            const mobilePanelClose = document.getElementById('mobilePanelClose');
+            const mobileSearchClose = document.getElementById('mobileSearchClose');
+            
+            if (mobileSearchToggle) {
+                mobileSearchToggle.addEventListener('click', () => {
+                    if (typeof toggleMobileSearch === 'function') {
+                        toggleMobileSearch();
+                    }
+                });
+            }
+            
+            if (mobileQueueToggle) {
+                mobileQueueToggle.addEventListener('click', () => {
+                    if (typeof toggleMobilePanel === 'function') {
+                        toggleMobilePanel('playlist');
+                    }
+                });
+            }
+            
+            if (mobilePanelClose) {
+                mobilePanelClose.addEventListener('click', () => {
+                    if (typeof closeMobilePanel === 'function') {
+                        closeMobilePanel();
+                    }
+                });
+            }
+            
+            if (mobileSearchClose) {
+                mobileSearchClose.addEventListener('click', () => {
+                    if (typeof closeMobileSearch === 'function') {
+                        closeMobileSearch();
+                    }
+                });
+            }
+            
+            // Test notification
+            setTimeout(() => {
+                const notification = document.getElementById('notification');
+                if (notification) {
+                    notification.textContent = '移动端测试页面已加载';
+                    notification.classList.add('show');
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, 3000);
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

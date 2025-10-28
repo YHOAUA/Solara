@@ -127,7 +127,11 @@
         }
         initialized = true;
 
-        document.body.classList.add("mobile-view");
+        // Ensure mobile classes are set
+        if (!document.body.classList.contains("mobile-view")) {
+            document.body.classList.add("mobile-view");
+        }
+        
         const initialView = "playlist";
         document.body.setAttribute("data-mobile-panel-view", initialView);
         if (dom.mobilePanelTitle) {
@@ -192,6 +196,23 @@
         updateMobileOverlayScrim();
     }
 
+    function cleanupMobileUIImpl() {
+        if (!document.body) {
+            return;
+        }
+        
+        // Close all overlays
+        closeAllMobileOverlaysImpl();
+        
+        // Remove mobile class if switching away from mobile view
+        if (!document.documentElement.classList.contains('mobile-view')) {
+            document.body.classList.remove("mobile-view");
+        }
+        
+        // Reset initialized flag for potential re-initialization
+        initialized = false;
+    }
+
     bridge.handlers.updateToolbarTitle = updateMobileToolbarTitleImpl;
     bridge.handlers.openSearch = openMobileSearchImpl;
     bridge.handlers.closeSearch = closeMobileSearchImpl;
@@ -201,6 +222,7 @@
     bridge.handlers.togglePanel = toggleMobilePanelImpl;
     bridge.handlers.closeAllOverlays = closeAllMobileOverlaysImpl;
     bridge.handlers.initialize = initializeMobileUIImpl;
+    bridge.handlers.cleanup = cleanupMobileUIImpl;
 
     if (bridge.queue.length) {
         const pending = bridge.queue.splice(0, bridge.queue.length);
