@@ -18,51 +18,14 @@
     <link rel="stylesheet" href="css/style.css">
     <script>
         (function () {
-            const ua = navigator.userAgent || "";
-            const isMobileUA = /android|iphone|ipad|ipod|mobile|blackberry|phone|opera mini|windows phone/i.test(ua);
-            const isSmallScreen = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 820px)").matches;
-            const isMobile = isMobileUA || isSmallScreen;
-            window.__SOLARA_IS_MOBILE = isMobile;
-            if (!isMobile) {
-                document.documentElement.classList.add("desktop-view");
-                const desktopLink = document.createElement("link");
-                desktopLink.rel = "stylesheet";
-                desktopLink.href = "css/desktop.css";
-                desktopLink.id = "desktopStylesheet";
-                document.head.appendChild(desktopLink);
-                return;
-            }
-            document.documentElement.classList.add("mobile-view");
-            const link = document.createElement("link");
-            link.rel = "stylesheet";
-            link.href = "css/mobile.css";
-            link.id = "mobileStylesheet";
-            document.head.appendChild(link);
-            const setViewportUnit = () => {
-                const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-                document.documentElement.style.setProperty("--mobile-vh", `${viewportHeight}px`);
-            };
-
-            const applyBodyClass = () => {
-                if (document.body) {
-                    document.body.classList.add("mobile-view");
-                    setViewportUnit();
-                }
-            };
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", applyBodyClass, { once: true });
-            } else {
-                applyBodyClass();
-            }
-
-            window.addEventListener("resize", setViewportUnit);
-            window.addEventListener("orientationchange", setViewportUnit);
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener("resize", setViewportUnit);
-                window.visualViewport.addEventListener("scroll", setViewportUnit);
-            }
-
-            setViewportUnit();
+            // Force desktop view for all devices
+            window.__SOLARA_IS_MOBILE = false;
+            document.documentElement.classList.add("desktop-view");
+            const desktopLink = document.createElement("link");
+            desktopLink.rel = "stylesheet";
+            desktopLink.href = "css/desktop.css";
+            desktopLink.id = "desktopStylesheet";
+            document.head.appendChild(desktopLink);
         })();
     </script>
 </head>
@@ -285,14 +248,5 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="js/index.js"></script>
-<script>
-    if (window.__SOLARA_IS_MOBILE) {
-        const mobileScript = document.createElement('script');
-        mobileScript.src = 'js/mobile.js';
-        mobileScript.async = false;
-        mobileScript.defer = false;
-        document.body.appendChild(mobileScript);
-    }
-</script>
 </body>
 </html>
