@@ -3407,10 +3407,12 @@ async function setupInteractions() {
             captureThemeDefaults();
         }
         document.body.classList.toggle("dark-mode", isDark);
-        dom.themeToggleButton.classList.toggle("is-dark", isDark);
-        const label = isDark ? "切换为浅色模式" : "切换为深色模式";
-        dom.themeToggleButton.setAttribute("aria-label", label);
-        dom.themeToggleButton.setAttribute("title", label);
+        if (dom.themeToggleButton) {
+            dom.themeToggleButton.classList.toggle("is-dark", isDark);
+            const label = isDark ? "切换为浅色模式" : "切换为深色模式";
+            dom.themeToggleButton.setAttribute("aria-label", label);
+            dom.themeToggleButton.setAttribute("title", label);
+        }
         applyDynamicGradient();
     }
 
@@ -3420,11 +3422,13 @@ async function setupInteractions() {
     const initialIsDark = savedTheme ? savedTheme === "dark" : prefersDark;
     applyTheme(initialIsDark);
 
-    dom.themeToggleButton.addEventListener("click", () => {
-        const isDark = !document.body.classList.contains("dark-mode");
-        applyTheme(isDark);
-        safeSetLocalStorage("theme", isDark ? "dark" : "light");
-    });
+    if (dom.themeToggleButton) {
+        dom.themeToggleButton.addEventListener("click", () => {
+            const isDark = !document.body.classList.contains("dark-mode");
+            applyTheme(isDark);
+            safeSetLocalStorage("theme", isDark ? "dark" : "light");
+        });
+    }
 
     dom.audioPlayer.volume = state.volume;
     dom.volumeSlider.value = state.volume;
@@ -3516,7 +3520,9 @@ async function setupInteractions() {
         });
     }
 
-    dom.loadOnlineBtn.addEventListener("click", exploreOnlineMusic);
+    if (dom.loadOnlineBtn) {
+        dom.loadOnlineBtn.addEventListener("click", exploreOnlineMusic);
+    }
     if (dom.mobileExploreButton) {
         dom.mobileExploreButton.addEventListener("click", (event) => {
             event.preventDefault();
@@ -4895,13 +4901,15 @@ function updateOnlineHighlight() {
 // 修复：探索在线音乐 - 添加到统一播放列表
 async function exploreOnlineMusic() {
     const btn = dom.loadOnlineBtn;
+    if (!btn) return;
+    
     const btnText = btn.querySelector(".btn-text");
     const loader = btn.querySelector(".loader");
 
     try {
         btn.disabled = true;
-        btnText.style.display = "none";
-        loader.style.display = "inline-block";
+        if (btnText) btnText.style.display = "none";
+        if (loader) loader.style.display = "inline-block";
 
         const songs = await API.getRadarPlaylist("3778678", { limit: 50, offset: 0 });
 
@@ -4930,8 +4938,8 @@ async function exploreOnlineMusic() {
         showNotification("加载失败，请稍后重试", "error");
     } finally {
         btn.disabled = false;
-        btnText.style.display = "flex";
-        loader.style.display = "none";
+        if (btnText) btnText.style.display = "flex";
+        if (loader) loader.style.display = "none";
     }
 }
 
