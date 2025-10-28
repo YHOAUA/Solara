@@ -1316,12 +1316,10 @@ html.mobile-view .playlist-label {
 
 .lyric-line.current .lyric-original {
     color: var(--lyrics-highlight-text);
-    font-size: 1.3em;
     font-weight: 800;
 }
 
 .lyric-line.current .lyric-translation {
-    font-size: 1.1em;
     font-weight: 600;
     opacity: 0.9;
     color: var(--lyrics-highlight-text);
@@ -1344,10 +1342,8 @@ html.mobile-view .playlist-label {
     content: none;
 }
 .lyrics .current { 
-    color: var(--lyrics-highlight-text); 
-    font-size: 1.2em;
-    font-weight: 600; 
-    transform: scale(1.05); 
+    color: var(--lyrics-highlight-text);
+    font-weight: 600;
 }
 
 /* 控制区域 */

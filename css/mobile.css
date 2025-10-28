@@ -335,14 +335,12 @@ body.mobile-view .mobile-inline-lyrics__content .lyric-translation {
 
 body.mobile-view .mobile-inline-lyrics__content .lyric-line.current .lyric-original {
     color: var(--lyrics-highlight-text, #f3a25b);
-    font-size: clamp(1rem, 4.2vw, 1.15rem);
     font-weight: 700;
 }
 
 body.mobile-view .mobile-inline-lyrics__content .lyric-line.current .lyric-translation {
     color: var(--lyrics-highlight-text, #f3a25b);
     opacity: 0.8;
-    font-size: clamp(0.88rem, 3.6vw, 1rem);
     font-weight: 600;
 }
 
