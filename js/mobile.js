@@ -127,23 +127,29 @@
     }
 
     function toggleMobilePanelFullscreenImpl() {
-        if (!document.body) {
-            return;
-        }
-        const isFullscreen = document.body.classList.contains("mobile-panel-fullscreen");
-        if (isFullscreen) {
-            document.body.classList.remove("mobile-panel-fullscreen");
-            if (dom.mobilePanelExpand) {
-                dom.mobilePanelExpand.setAttribute("aria-label", "展开全屏");
-                dom.mobilePanelExpand.setAttribute("title", "展开全屏");
+        // Not needed anymore with new layout
+    }
+
+    function switchMobileContentTab(tabName) {
+        const tabs = document.querySelectorAll('.mobile-tab-btn');
+        const contents = document.querySelectorAll('.mobile-content-container > .playlist, .mobile-content-container > .lyrics');
+        
+        tabs.forEach(tab => {
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
             }
-        } else {
-            document.body.classList.add("mobile-panel-fullscreen");
-            if (dom.mobilePanelExpand) {
-                dom.mobilePanelExpand.setAttribute("aria-label", "退出全屏");
-                dom.mobilePanelExpand.setAttribute("title", "退出全屏");
+        });
+        
+        contents.forEach(content => {
+            if ((tabName === 'playlist' && content.classList.contains('playlist')) ||
+                (tabName === 'lyrics' && content.classList.contains('lyrics'))) {
+                content.classList.add('active');
+            } else {
+                content.classList.remove('active');
             }
-        }
+        });
     }
 
     function initializeMobileUIImpl() {
@@ -182,6 +188,16 @@
         if (dom.mobilePanelExpand) {
             dom.mobilePanelExpand.addEventListener("click", toggleMobilePanelFullscreenImpl);
         }
+
+        // Setup mobile content tabs
+        const tabButtons = document.querySelectorAll('.mobile-tab-btn');
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.dataset.tab;
+                switchMobileContentTab(tabName);
+            });
+        });
+
         const handleGlobalPointerDown = (event) => {
             if (!document.body) {
                 return;
@@ -229,7 +245,11 @@
     bridge.handlers.togglePanel = toggleMobilePanelImpl;
     bridge.handlers.closeAllOverlays = closeAllMobileOverlaysImpl;
     bridge.handlers.togglePanelFullscreen = toggleMobilePanelFullscreenImpl;
+    bridge.handlers.switchContentTab = switchMobileContentTab;
     bridge.handlers.initialize = initializeMobileUIImpl;
+    
+    // Expose switchMobileContentTab globally for external use
+    window.switchMobileContentTab = switchMobileContentTab;
 
     if (bridge.queue.length) {
         const pending = bridge.queue.splice(0, bridge.queue.length);

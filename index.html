@@ -148,31 +148,20 @@
                 </div>
             </div>
 
-            <div class="mobile-panel" id="mobilePanel">
-                <div class="mobile-panel-header" id="mobilePanelHeader">
-                    <div class="mobile-panel-handle" aria-hidden="true"></div>
-                    <div class="mobile-panel-title" id="mobilePanelTitle">播放列表</div>
-                    <div class="mobile-panel-actions">
-                        <button
-                            id="mobileClearPlaylistBtn"
-                            class="mobile-panel-action-btn mobile-panel-clear-btn"
-                            type="button"
-                            aria-label="清空播放列表"
-                            title="清空播放列表"
-                            onclick="clearPlaylist()"
-                            hidden
-                        >
-                            <i class="fas fa-trash" aria-hidden="true"></i>
-                        </button>
-                        <button id="mobilePanelExpand" class="mobile-panel-action-btn mobile-panel-expand-btn" type="button" aria-label="展开全屏" title="展开全屏">
-                            <i class="fas fa-expand" aria-hidden="true"></i>
-                        </button>
-                        <button id="mobilePanelClose" class="mobile-close-btn mobile-panel-action-btn" type="button" aria-label="收起播放面板">
-                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                </div>
+            <!-- Mobile content tabs -->
+            <div class="mobile-content-tabs" id="mobileContentTabs">
+                <button class="mobile-tab-btn active" data-tab="playlist" type="button">
+                    <i class="fas fa-list"></i>
+                    <span>播放列表</span>
+                </button>
+                <button class="mobile-tab-btn" data-tab="lyrics" type="button">
+                    <i class="fas fa-align-left"></i>
+                    <span>歌词</span>
+                </button>
+            </div>
 
+            <!-- Mobile content area -->
+            <div class="mobile-content-container" id="mobileContentContainer">
                 <div class="playlist active empty" id="playlist">
                     <div class="playlist-header">
                         <div class="playlist-selector">
@@ -246,6 +235,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
 
         <div class="controls">
