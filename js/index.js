@@ -19,7 +19,6 @@ const dom = {
     mobileInlineLyricsContent: document.getElementById("mobileInlineLyricsContent"),
     audioPlayer: document.getElementById("audioPlayer"),
     themeToggleButton: document.getElementById("themeToggleButton"),
-    loadOnlineBtn: document.getElementById("loadOnlineBtn"),
     showPlaylistBtn: document.getElementById("showPlaylistBtn"),
     showLyricsBtn: document.getElementById("showLyricsBtn"),
     searchInput: document.getElementById("searchInput"),
@@ -49,7 +48,6 @@ const dom = {
     mobilePanelClose: document.getElementById("mobilePanelClose"),
     mobileClearPlaylistBtn: document.getElementById("mobileClearPlaylistBtn"),
     mobileOverlayScrim: document.getElementById("mobileOverlayScrim"),
-    mobileExploreButton: document.getElementById("mobileExploreButton"),
     mobileQualityToggle: document.getElementById("mobileQualityToggle"),
     mobileQualityLabel: document.getElementById("mobileQualityLabel"),
     mobilePanel: document.getElementById("mobilePanel"),
@@ -3516,16 +3514,6 @@ async function setupInteractions() {
         });
     }
 
-    dom.loadOnlineBtn.addEventListener("click", exploreOnlineMusic);
-    if (dom.mobileExploreButton) {
-        dom.mobileExploreButton.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            closeAllMobileOverlays();
-            exploreOnlineMusic();
-        });
-    }
-
     if (dom.showPlaylistBtn) {
         dom.showPlaylistBtn.addEventListener("click", () => {
             if (isMobileView) {
@@ -4890,49 +4878,6 @@ function updateOnlineHighlight() {
             item.classList.remove("current");
         }
     });
-}
-
-// 修复：探索在线音乐 - 添加到统一播放列表
-async function exploreOnlineMusic() {
-    const btn = dom.loadOnlineBtn;
-    const btnText = btn.querySelector(".btn-text");
-    const loader = btn.querySelector(".loader");
-
-    try {
-        btn.disabled = true;
-        btnText.style.display = "none";
-        loader.style.display = "inline-block";
-
-        const songs = await API.getRadarPlaylist("3778678", { limit: 50, offset: 0 });
-
-        if (songs.length > 0) {
-            state.onlineSongs = songs;
-            const result = addSongsToPlaylist(songs, state.activePlaylistId);
-            if (result.added > 0) {
-                renderPlaylist();
-                if (result.added === songs.length) {
-                    showNotification(`已加载 ${result.added} 首探索雷达歌曲到当前歌单`);
-                } else {
-                    showNotification(`新增 ${result.added} 首歌曲，跳过 ${result.duplicates} 首已存在的歌曲`);
-                }
-                debugLog(`加载探索雷达播放列表成功: 新增 ${result.added} 首，重复 ${result.duplicates} 首`);
-            } else {
-                buildPlaylistMenu();
-                updatePlaylistSelectorLabel();
-                showNotification("探索雷达歌曲已全部在当前歌单中", "warning");
-                debugLog("探索雷达歌曲均已存在当前歌单，未进行添加");
-            }
-        } else {
-            showNotification("未找到在线音乐", "error");
-        }
-    } catch (error) {
-        console.error("加载在线音乐失败:", error);
-        showNotification("加载失败，请稍后重试", "error");
-    } finally {
-        btn.disabled = false;
-        btnText.style.display = "flex";
-        loader.style.display = "none";
-    }
 }
 
 // 修复：加载歌词

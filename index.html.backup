@@ -230,7 +230,7 @@
                         </div>
                     </div>
                     <div class="playlist-sync-status" id="playlistSyncStatus" role="status" aria-live="polite"></div>
-                    <div class="playlist-empty-hint">开始搜索音乐并添加到播放列表</div>
+                    <div class="playlist-empty-hint">点击“探索雷达”加载在线音乐</div>
                     <div class="playlist-scroll">
                         <div class="playlist-items" id="playlistItems"></div>
                     </div>
