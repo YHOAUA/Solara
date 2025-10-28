@@ -1569,6 +1569,7 @@ const state = {
     defaultDocumentTitle: document.title,
     tabTitleBase: document.title,
     currentLyricForTitle: "",
+    bilingualLyrics: true,
 };
 
 let playlistPickerElement = null;
@@ -4943,7 +4944,8 @@ async function loadLyrics(song) {
         const lyricData = await API.fetchJson(lyricUrl);
 
         if (lyricData && lyricData.lyric) {
-            parseLyrics(lyricData.lyric);
+            const translatedLyric = lyricData.tlyric || null;
+            parseLyrics(lyricData.lyric, translatedLyric);
             dom.lyrics.classList.remove("empty");
             dom.lyrics.dataset.placeholder = "default";
         } else {
@@ -4966,23 +4968,47 @@ async function loadLyrics(song) {
 }
 
 // 修复：解析歌词
-function parseLyrics(lyricText) {
-    const lines = lyricText.split('\n');
-    const lyrics = [];
+function parseLyrics(lyricText, translatedLyricText = null) {
+    const parseLrcLines = (text) => {
+        if (!text) return [];
+        const lines = text.split('\n');
+        const result = [];
 
-    lines.forEach(line => {
-        const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/);
-        if (match) {
-            const minutes = parseInt(match[1]);
-            const seconds = parseInt(match[2]);
-            const milliseconds = parseInt(match[3].padEnd(3, '0'));
-            const time = minutes * 60 + seconds + milliseconds / 1000;
-            const text = match[4].trim();
+        lines.forEach(line => {
+            const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/);
+            if (match) {
+                const minutes = parseInt(match[1]);
+                const seconds = parseInt(match[2]);
+                const milliseconds = parseInt(match[3].padEnd(3, '0'));
+                const time = minutes * 60 + seconds + milliseconds / 1000;
+                const text = match[4].trim();
 
-            if (text) {
-                lyrics.push({ time, text });
+                if (text) {
+                    result.push({ time, text });
+                }
             }
-        }
+        });
+
+        return result;
+    };
+
+    const originalLyrics = parseLrcLines(lyricText);
+    const translatedLyrics = translatedLyricText ? parseLrcLines(translatedLyricText) : [];
+
+    const lyrics = [];
+    const translationMap = new Map();
+
+    translatedLyrics.forEach(tl => {
+        translationMap.set(tl.time, tl.text);
+    });
+
+    originalLyrics.forEach(lyric => {
+        const translated = translationMap.get(lyric.time) || "";
+        lyrics.push({
+            time: lyric.time,
+            text: lyric.text,
+            translation: translated
+        });
     });
 
     state.currentLyricLine = -1;
@@ -5012,9 +5038,17 @@ function clearLyricsContent() {
 
 // 修复：显示歌词
 function displayLyrics() {
-    const lyricsHtml = state.lyricsData.map((lyric, index) =>
-        `<div data-time="${lyric.time}" data-index="${index}">${lyric.text}</div>`
-    ).join("");
+    const lyricsHtml = state.lyricsData.map((lyric, index) => {
+        const hasTranslation = state.bilingualLyrics && lyric.translation;
+        if (hasTranslation) {
+            return `<div data-time="${lyric.time}" data-index="${index}" class="lyric-line">
+                <div class="lyric-original">${lyric.text}</div>
+                <div class="lyric-translation">${lyric.translation}</div>
+            </div>`;
+        } else {
+            return `<div data-time="${lyric.time}" data-index="${index}" class="lyric-line">${lyric.text}</div>`;
+        }
+    }).join("");
     setLyricsContentHtml(lyricsHtml);
     if (dom.lyrics) {
         dom.lyrics.dataset.placeholder = "default";

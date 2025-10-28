@@ -1294,6 +1294,39 @@ html.mobile-view .playlist-label {
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+.lyric-line {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+}
+
+.lyric-original {
+    font-size: 1em;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.lyric-translation {
+    font-size: 0.85em;
+    font-weight: 400;
+    color: var(--text-secondary-color);
+    opacity: 0.75;
+}
+
+.lyric-line.current .lyric-original {
+    color: var(--lyrics-highlight-text);
+    font-size: 1.3em;
+    font-weight: 800;
+}
+
+.lyric-line.current .lyric-translation {
+    font-size: 1.1em;
+    font-weight: 600;
+    opacity: 0.9;
+    color: var(--lyrics-highlight-text);
+}
+
 /* 当歌词容器只有默认文本时的样式 */
 .lyrics.empty[data-placeholder="default"] .lyrics-content {
     display: none;
