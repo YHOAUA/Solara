@@ -18,14 +18,53 @@
     <link rel="stylesheet" href="css/style.css">
     <script>
         (function () {
-            // Force desktop view for all devices
-            window.__SOLARA_IS_MOBILE = false;
-            document.documentElement.classList.add("desktop-view");
-            const desktopLink = document.createElement("link");
-            desktopLink.rel = "stylesheet";
-            desktopLink.href = "css/desktop.css";
-            desktopLink.id = "desktopStylesheet";
-            document.head.appendChild(desktopLink);
+            // Mobile device detection
+            function isMobileDevice() {
+                // Check User Agent
+                const ua = navigator.userAgent || navigator.vendor || window.opera;
+                const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i;
+                const isMobileUA = mobileRegex.test(ua.toLowerCase());
+                
+                // Check touch support
+                const hasTouchSupport = 'ontouchstart' in window || 
+                                      navigator.maxTouchPoints > 0 || 
+                                      navigator.msMaxTouchPoints > 0;
+                
+                // Check screen size (consider devices with width <= 768px as mobile)
+                const isMobileScreen = window.innerWidth <= 768;
+                
+                // If UA indicates mobile OR (has touch AND small screen), treat as mobile
+                return isMobileUA || (hasTouchSupport && isMobileScreen);
+            }
+            
+            // Set mobile or desktop view
+            const isMobile = isMobileDevice();
+            window.__SOLARA_IS_MOBILE = isMobile;
+            
+            if (isMobile) {
+                document.documentElement.classList.add("mobile-view");
+                const mobileLink = document.createElement("link");
+                mobileLink.rel = "stylesheet";
+                mobileLink.href = "css/mobile.css";
+                mobileLink.id = "mobileStylesheet";
+                document.head.appendChild(mobileLink);
+                
+                // Set mobile viewport height custom property for better mobile support
+                function setMobileVH() {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--mobile-vh', `${vh}px`);
+                }
+                setMobileVH();
+                window.addEventListener('resize', setMobileVH);
+                window.addEventListener('orientationchange', setMobileVH);
+            } else {
+                document.documentElement.classList.add("desktop-view");
+                const desktopLink = document.createElement("link");
+                desktopLink.rel = "stylesheet";
+                desktopLink.href = "css/desktop.css";
+                desktopLink.id = "desktopStylesheet";
+                document.head.appendChild(desktopLink);
+            }
         })();
     </script>
 </head>
@@ -247,6 +286,7 @@
 <div id="debugInfo" class="debug-info"></div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="js/mobile.js"></script>
 <script src="js/index.js"></script>
 </body>
 </html>
