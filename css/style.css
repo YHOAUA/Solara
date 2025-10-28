@@ -1345,8 +1345,8 @@ html.mobile-view .playlist-label {
 }
 .lyrics .current { 
     color: var(--lyrics-highlight-text); 
-    font-size: 1.3em;
-    font-weight: 800; 
+    font-size: 1.2em;
+    font-weight: 600; 
     transform: scale(1.05); 
 }
 
