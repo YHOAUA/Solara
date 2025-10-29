@@ -5006,6 +5006,41 @@ function clearLyricsContent() {
     }
 }
 
+// 检测文本是否包含中文字符
+function containsChinese(text) {
+    if (!text || typeof text !== "string") {
+        return false;
+    }
+    return /[\u4e00-\u9fff\u3400-\u4dbf]/.test(text);
+}
+
+// 为标签页标题选择首选歌词（优先中文）
+function getPreferredLyricForTitle(lyric) {
+    if (!lyric) {
+        return "";
+    }
+    const hasText = lyric.text && typeof lyric.text === "string";
+    const hasTranslation = lyric.translation && typeof lyric.translation === "string";
+    if (!hasText && !hasTranslation) {
+        return "";
+    }
+    if (!hasTranslation) {
+        return lyric.text;
+    }
+    if (!hasText) {
+        return lyric.translation;
+    }
+    const textIsChinese = containsChinese(lyric.text);
+    const translationIsChinese = containsChinese(lyric.translation);
+    if (textIsChinese && !translationIsChinese) {
+        return lyric.text;
+    }
+    if (!textIsChinese && translationIsChinese) {
+        return lyric.translation;
+    }
+    return lyric.text;
+}
+
 // 修复：显示歌词
 function displayLyrics() {
     const lyricsHtml = state.lyricsData.map((lyric, index) => {
@@ -5049,7 +5084,7 @@ function syncLyrics() {
         const activeLyric = currentIndex >= 0 && currentIndex < state.lyricsData.length
             ? state.lyricsData[currentIndex]
             : null;
-        setTabTitleLyric(activeLyric ? activeLyric.text : "");
+        setTabTitleLyric(activeLyric ? getPreferredLyricForTitle(activeLyric) : "");
 
         const lyricTargets = [];
         if (dom.lyricsContent) {

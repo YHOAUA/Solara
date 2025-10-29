@@ -1,0 +1,52 @@
+====================================
+标签页歌词优先显示中文 - 实现摘要
+Tab Lyrics Prioritize Chinese - Implementation Summary
+====================================
+
+实现日期 (Implementation Date): $(date +%Y-%m-%d)
+分支 (Branch): feat/tab-lyrics-prioritize-zh
+
+变更文件 (Changed Files):
+--------------------------
+1. js/index.js - 添加了中文检测和歌词优先级选择逻辑
+2. js/index.min.js - 更新的压缩版本
+3. TAB_LYRICS_CHINESE_PRIORITY.md - 功能说明文档
+
+核心功能 (Core Features):
+--------------------------
+✅ 自动检测歌词文本是否包含中文字符
+✅ 当歌曲有双语歌词时，优先在标签页显示中文歌词
+✅ 保持与现有功能的完全兼容性
+✅ 不影响歌词面板和移动端的显示
+
+新增函数 (New Functions):
+--------------------------
+1. containsChinese(text)
+   - 检测文本是否包含中文字符
+   - 使用 Unicode 范围 U+4E00-U+9FFF, U+3400-U+4DBF
+
+2. getPreferredLyricForTitle(lyric)
+   - 智能选择用于标签页显示的歌词
+   - 优先级: 中文 > 原文 > 翻译
+
+修改函数 (Modified Functions):
+--------------------------
+1. syncLyrics()
+   - 第 5085 行: 使用 getPreferredLyricForTitle() 代替直接使用 activeLyric.text
+
+测试结果 (Test Results):
+--------------------------
+✅ 中文原文 + 英文翻译 → 显示中文
+✅ 英文原文 + 中文翻译 → 显示中文  
+✅ 纯中文歌词 → 显示中文
+✅ 纯英文歌词 → 显示英文
+✅ 双中文歌词 → 显示原文
+✅ 双英文歌词 → 显示原文
+
+代码质量 (Code Quality):
+--------------------------
+✅ 语法检查通过 (Syntax check passed)
+✅ 添加了中文注释 (Chinese comments added)
+✅ 遵循现有代码风格 (Follows existing code style)
+✅ 向后兼容 (Backward compatible)
+
