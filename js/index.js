@@ -4880,36 +4880,61 @@ function updateOnlineHighlight() {
     });
 }
 
-// 修复：加载歌词
+// 修复：加载歌词（带重试机制）
 async function loadLyrics(song) {
-    try {
-        const lyricUrl = API.getLyric(song);
-        debugLog(`获取歌词URL: ${lyricUrl}`);
-
-        const lyricData = await API.fetchJson(lyricUrl);
-
-        if (lyricData && lyricData.lyric) {
-            const translatedLyric = lyricData.tlyric || null;
-            parseLyrics(lyricData.lyric, translatedLyric);
-            dom.lyrics.classList.remove("empty");
-            dom.lyrics.dataset.placeholder = "default";
-        } else {
-            setLyricsContentHtml("<div>暂无歌词</div>");
-            dom.lyrics.classList.add("empty");
-            dom.lyrics.dataset.placeholder = "message";
-            state.lyricsData = [];
-            state.currentLyricLine = -1;
-            setTabTitleLyric("");
+    const maxRetries = 3;
+    const retryDelays = [0, 500, 1000];
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (state.currentSong !== song) {
+            return;
         }
-    } catch (error) {
-        console.error("加载歌词失败:", error);
-        setLyricsContentHtml("<div>歌词加载失败</div>");
-        dom.lyrics.classList.add("empty");
-        dom.lyrics.dataset.placeholder = "message";
-        state.lyricsData = [];
-        state.currentLyricLine = -1;
-        setTabTitleLyric("");
+        
+        try {
+            if (attempt > 0) {
+                await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
+            }
+            
+            if (state.currentSong !== song) {
+                return;
+            }
+            
+            const lyricUrl = API.getLyric(song);
+            debugLog(`获取歌词URL (尝试 ${attempt + 1}/${maxRetries}): ${lyricUrl}`);
+
+            const lyricData = await API.fetchJson(lyricUrl);
+
+            if (lyricData && lyricData.lyric) {
+                const translatedLyric = lyricData.tlyric || null;
+                parseLyrics(lyricData.lyric, translatedLyric);
+                dom.lyrics.classList.remove("empty");
+                dom.lyrics.dataset.placeholder = "default";
+                return;
+            }
+            
+            if (attempt < maxRetries - 1) {
+                debugLog(`第 ${attempt + 1} 次尝试未获取到歌词，准备重试...`);
+            }
+        } catch (error) {
+            console.error(`加载歌词失败 (尝试 ${attempt + 1}/${maxRetries}):`, error);
+            if (attempt === maxRetries - 1) {
+                setLyricsContentHtml("<div>歌词加载失败</div>");
+                dom.lyrics.classList.add("empty");
+                dom.lyrics.dataset.placeholder = "message";
+                state.lyricsData = [];
+                state.currentLyricLine = -1;
+                setTabTitleLyric("");
+                return;
+            }
+        }
     }
+    
+    setLyricsContentHtml("<div>暂无歌词</div>");
+    dom.lyrics.classList.add("empty");
+    dom.lyrics.dataset.placeholder = "message";
+    state.lyricsData = [];
+    state.currentLyricLine = -1;
+    setTabTitleLyric("");
 }
 
 // 修复：解析歌词
