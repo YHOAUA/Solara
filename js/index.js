@@ -4456,130 +4456,9 @@ function getSongArtistText(song) {
     return "";
 }
 
-function normalizeSongMatchString(value) {
-    if (!value) {
-        return "";
-    }
-    const text = Array.isArray(value) ? value.join(" ") : String(value);
-    return text
-        .toLowerCase()
-        .replace(/（.*?）/g, "")
-        .replace(/\(.*?\)/g, "")
-        .replace(/[\s'"\-_,.!?？。·、【】\[\]（）()<>《》「」『』\/\\]+/g, "")
-        .trim();
-}
-
-function scoreKuwoCandidate(originalSong, candidate) {
-    if (!candidate) {
-        return -Infinity;
-    }
-    const originalName = normalizeSongMatchString(originalSong?.name);
-    const originalArtist = normalizeSongMatchString(getSongArtistText(originalSong));
-    const candidateName = normalizeSongMatchString(candidate.name);
-    const candidateArtist = normalizeSongMatchString(getSongArtistText(candidate));
-    const originalAlbum = normalizeSongMatchString(originalSong?.album);
-    const candidateAlbum = normalizeSongMatchString(candidate.album);
-
-    let score = 0;
-
-    if (candidateName && originalName) {
-        if (candidateName === originalName) {
-            score += 6;
-        } else if (candidateName.includes(originalName) || originalName.includes(candidateName)) {
-            score += 3;
-        }
-    }
-
-    if (candidateArtist && originalArtist) {
-        if (candidateArtist === originalArtist) {
-            score += 4;
-        } else if (candidateArtist.includes(originalArtist) || originalArtist.includes(candidateArtist)) {
-            score += 2;
-        }
-    }
-
-    if (candidateAlbum && originalAlbum && candidateAlbum === originalAlbum) {
-        score += 1;
-    }
-
-    if (candidateName && originalName && candidateName.startsWith(originalName)) {
-        score += 1;
-    }
-
-    return score;
-}
-
-async function findKuwoFallbackSong(originalSong) {
-    if (!originalSong || !originalSong.name) {
-        return null;
-    }
-
-    const keywords = [];
-    const songName = String(originalSong.name).trim();
-    const artistText = getSongArtistText(originalSong).trim();
-    const primaryArtist = artistText ? artistText.split(/[,&\/]/)[0].trim() : "";
-
-    if (songName && artistText) {
-        keywords.push(`${songName} ${artistText}`);
-    }
-    if (songName && primaryArtist && primaryArtist !== songName) {
-        keywords.push(`${songName} ${primaryArtist}`);
-    }
-    if (songName) {
-        keywords.push(songName);
-    }
-
-    const triedKeywords = new Set();
-
-    for (const keyword of keywords) {
-        const normalizedKeyword = keyword.trim();
-        if (!normalizedKeyword || triedKeywords.has(normalizedKeyword)) {
-            continue;
-        }
-        triedKeywords.add(normalizedKeyword);
-
-        try {
-            debugLog(`尝试酷我音源搜索: ${normalizedKeyword}`);
-            const results = await API.search(normalizedKeyword, "kuwo", 10, 1);
-            const candidates = Array.isArray(results)
-                ? results.filter(item => item && item.source === "kuwo")
-                : [];
-            if (!candidates.length) {
-                continue;
-            }
-
-            let bestCandidate = null;
-            let bestScore = -Infinity;
-
-            for (const candidate of candidates) {
-                const score = scoreKuwoCandidate(originalSong, candidate);
-                if (bestCandidate === null || score > bestScore) {
-                    bestCandidate = candidate;
-                    bestScore = score;
-                }
-            }
-
-            if (bestCandidate) {
-                const fallbackSong = {
-                    ...bestCandidate,
-                    album: bestCandidate.album || originalSong.album,
-                    pic_id: bestCandidate.pic_id || originalSong.pic_id,
-                    lyric_id: bestCandidate.lyric_id || bestCandidate.id || originalSong.lyric_id || originalSong.id,
-                    url_id: bestCandidate.url_id || bestCandidate.id || originalSong.url_id || originalSong.id,
-                };
-                return fallbackSong;
-            }
-        } catch (searchError) {
-            console.warn("酷我搜索失败:", searchError);
-        }
-    }
-
-    return null;
-}
-
 async function playSong(song, options = {}) {
     const normalizedOptions = options && typeof options === "object" ? options : {};
-    const { autoplay = true, startTime = 0, preserveProgress = false, allowKuwoFallback = false } = normalizedOptions;
+    const { autoplay = true, startTime = 0, preserveProgress = false } = normalizedOptions;
 
     // 保留之前的调色板状态，避免视觉跳跃
     const previousPalette = state.dynamicPalette;
@@ -4770,25 +4649,6 @@ async function playSong(song, options = {}) {
         debugLog(`开始播放: ${song.name} @${quality}`);
     } catch (error) {
         console.error('播放歌曲失败:', error);
-        const shouldAttemptKuwoFallback = allowKuwoFallback && song && song.source !== "kuwo";
-        if (shouldAttemptKuwoFallback) {
-            try {
-                const fallbackSong = await findKuwoFallbackSong(song);
-                if (fallbackSong) {
-                    showNotification("主音源播放失败，正在尝试酷我音源...", "warning");
-                    debugLog(`切换到酷我音源播放尝试: ${fallbackSong.name} (${fallbackSong.id})`);
-                    await playSong(fallbackSong, {
-                        ...normalizedOptions,
-                        allowKuwoFallback: false,
-                    });
-                    showNotification("已切换到酷我音源播放", "success");
-                    return;
-                }
-                debugLog("未找到可用的酷我音源备选");
-            } catch (fallbackError) {
-                console.warn("酷我音源播放失败:", fallbackError);
-            }
-        }
         throw error;
     } finally {
         savePlayerState();
