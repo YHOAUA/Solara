@@ -1131,7 +1131,7 @@ const QUALITY_OPTIONS = [
 
 function normalizeQuality(value) {
     const match = QUALITY_OPTIONS.find(option => option.value === value);
-    return match ? match.value : "320";
+    return match ? match.value : "192";
 }
 
 const savedPlaylistSongs = (() => {
@@ -1505,7 +1505,7 @@ const API = {
         };
     },
 
-    getSongUrl: (song, quality = "320") => {
+    getSongUrl: (song, quality = "192") => {
         const signature = API.generateSignature();
         return `${API.baseUrl}?types=url&id=${song.id}&source=${song.source || "netease"}&br=${quality}&s=${signature}`;
     },
@@ -4483,20 +4483,16 @@ async function playSong(song, options = {}) {
     setTabTitleBase(titleParts.join(" - "));
 
     try {
-        const quality = state.playbackQuality || '320';
-        const audioUrl = API.getSongUrl(song, quality);
-        debugLog(`获取音频URL: ${audioUrl}`);
-
-        // 并行获取音频数据和准备UI
-        const audioDataPromise = API.fetchJson(audioUrl);
+        const quality = state.playbackQuality || '192';
         
-        // 预加载封面图片（不阻塞音频加载）
-        const preloadArtwork = () => {
+        // 优先加载封面和歌词（不阻塞太久）
+        const artworkPromise = new Promise((resolve) => {
             if (song.pic_id) {
                 const picUrl = API.getPicUrl(song);
                 API.fetchJson(picUrl)
                     .then(data => {
                         if (!data || !data.url || state.currentSong !== song) {
+                            resolve();
                             return;
                         }
                         const img = new Image();
@@ -4504,6 +4500,7 @@ async function playSong(song, options = {}) {
                         img.crossOrigin = "anonymous";
                         img.onload = () => {
                             if (state.currentSong !== song) {
+                                resolve();
                                 return;
                             }
                             setAlbumCoverImage(imageUrl);
@@ -4521,11 +4518,13 @@ async function playSong(song, options = {}) {
                                 // 异步获取调色板，不阻塞
                                 updateDynamicBackground(imageUrl);
                             }
+                            resolve();
                         };
                         img.onerror = () => {
                             if (state.currentSong === song && !previousImage) {
                                 showAlbumCoverPlaceholder();
                             }
+                            resolve();
                         };
                         img.src = imageUrl;
                     })
@@ -4534,20 +4533,67 @@ async function playSong(song, options = {}) {
                         if (state.currentSong === song && !previousImage) {
                             showAlbumCoverPlaceholder();
                         }
+                        resolve();
                     });
-            } else if (!previousImage) {
-                showAlbumCoverPlaceholder();
+            } else {
+                if (!previousImage) {
+                    showAlbumCoverPlaceholder();
+                }
+                resolve();
             }
-        };
-
-        // 立即开始预加载封面（异步）
-        if (typeof window.requestIdleCallback === "function") {
-            window.requestIdleCallback(preloadArtwork, { timeout: 100 });
-        } else {
-            setTimeout(preloadArtwork, 0);
-        }
-
-        const audioData = await audioDataPromise;
+        });
+        
+        // 优先加载歌词
+        const lyricsPromise = new Promise((resolve) => {
+            const lyricUrl = API.getLyric(song);
+            debugLog(`获取歌词URL: ${lyricUrl}`);
+            
+            API.fetchJson(lyricUrl)
+                .then(lyricData => {
+                    if (state.currentSong !== song) {
+                        resolve();
+                        return;
+                    }
+                    if (lyricData && lyricData.lyric) {
+                        const translatedLyric = lyricData.tlyric || null;
+                        parseLyrics(lyricData.lyric, translatedLyric);
+                        dom.lyrics.classList.remove("empty");
+                        dom.lyrics.dataset.placeholder = "default";
+                    } else {
+                        setLyricsContentHtml("<div>暂无歌词</div>");
+                        dom.lyrics.classList.add("empty");
+                        dom.lyrics.dataset.placeholder = "message";
+                        state.lyricsData = [];
+                        state.currentLyricLine = -1;
+                        setTabTitleLyric("");
+                    }
+                    resolve();
+                })
+                .catch(error => {
+                    console.error("加载歌词失败:", error);
+                    if (state.currentSong === song) {
+                        setLyricsContentHtml("<div>歌词加载失败</div>");
+                        dom.lyrics.classList.add("empty");
+                        dom.lyrics.dataset.placeholder = "message";
+                        state.lyricsData = [];
+                        state.currentLyricLine = -1;
+                        setTabTitleLyric("");
+                    }
+                    resolve();
+                });
+        });
+        
+        // 等待封面和歌词加载完成（设置超时避免阻塞太久）
+        await Promise.race([
+            Promise.all([artworkPromise, lyricsPromise]),
+            new Promise(resolve => setTimeout(resolve, 800))
+        ]);
+        
+        // 开始获取和加载音频
+        const audioUrl = API.getSongUrl(song, quality);
+        debugLog(`获取音频URL: ${audioUrl}`);
+        
+        const audioData = await API.fetchJson(audioUrl);
 
         if (!audioData || !audioData.url) {
             throw new Error('无法获取音频播放地址');
@@ -4587,12 +4633,58 @@ async function playSong(song, options = {}) {
         let lastAudioError = null;
         let usedFallbackAudio = false;
 
+        // 使用流式加载，不等待完全加载完成
         for (const candidateUrl of candidateAudioUrls) {
             dom.audioPlayer.src = candidateUrl;
             dom.audioPlayer.load();
 
             try {
-                await waitForAudioReady(dom.audioPlayer);
+                // 使用 canplay 事件而不是 loadedmetadata，允许更早开始播放
+                await new Promise((resolve, reject) => {
+                    let resolved = false;
+                    
+                    const onCanPlay = () => {
+                        if (resolved) return;
+                        resolved = true;
+                        cleanup();
+                        resolve();
+                    };
+                    
+                    const onLoadedMetadata = () => {
+                        if (resolved) return;
+                        resolved = true;
+                        cleanup();
+                        resolve();
+                    };
+                    
+                    const onError = (e) => {
+                        if (resolved) return;
+                        resolved = true;
+                        cleanup();
+                        reject(new Error('音频加载失败'));
+                    };
+                    
+                    const cleanup = () => {
+                        dom.audioPlayer.removeEventListener('canplay', onCanPlay);
+                        dom.audioPlayer.removeEventListener('loadedmetadata', onLoadedMetadata);
+                        dom.audioPlayer.removeEventListener('error', onError);
+                    };
+                    
+                    // 监听 canplay 和 loadedmetadata，哪个先触发就用哪个
+                    dom.audioPlayer.addEventListener('canplay', onCanPlay, { once: true });
+                    dom.audioPlayer.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+                    dom.audioPlayer.addEventListener('error', onError, { once: true });
+                    
+                    // 设置超时，避免无限等待
+                    setTimeout(() => {
+                        if (!resolved) {
+                            resolved = true;
+                            cleanup();
+                            reject(new Error('音频加载超时'));
+                        }
+                    }, 10000);
+                });
+                
                 selectedAudioUrl = candidateUrl;
                 usedFallbackAudio = candidateUrl !== primaryAudioUrl && candidateAudioUrls.length > 1;
                 break;
@@ -4642,9 +4734,6 @@ async function playSong(song, options = {}) {
             dom.audioPlayer.pause();
             updatePlayPauseButton();
         }
-
-        // 异步加载歌词，不阻塞播放
-        scheduleDeferredLyrics(song, playPromise);
 
         debugLog(`开始播放: ${song.name} @${quality}`);
     } catch (error) {
