@@ -4560,7 +4560,7 @@ async function playSong(song, options = {}) {
                         dom.lyrics.classList.remove("empty");
                         dom.lyrics.dataset.placeholder = "default";
                     } else {
-                        setLyricsContentHtml("<div>暂无歌词</div>");
+                        setNoLyricsHtml();
                         dom.lyrics.classList.add("empty");
                         dom.lyrics.dataset.placeholder = "message";
                         state.lyricsData = [];
@@ -4984,7 +4984,7 @@ async function loadLyrics(song) {
         }
     }
     
-    setLyricsContentHtml("<div>暂无歌词</div>");
+    setNoLyricsHtml();
     dom.lyrics.classList.add("empty");
     dom.lyrics.dataset.placeholder = "message";
     state.lyricsData = [];
@@ -5049,6 +5049,32 @@ function setLyricsContentHtml(html) {
     if (dom.mobileInlineLyricsContent) {
         dom.mobileInlineLyricsContent.innerHTML = html;
     }
+}
+
+function refreshLyrics() {
+    if (!state.currentSong) {
+        return;
+    }
+    
+    setLyricsContentHtml("<div>正在重新加载歌词...</div>");
+    dom.lyrics.classList.add("empty");
+    dom.lyrics.dataset.placeholder = "message";
+    
+    loadLyrics(state.currentSong).catch(error => {
+        console.error("刷新歌词失败:", error);
+    });
+}
+
+function setNoLyricsHtml() {
+    const html = '<div class="no-lyrics-message" style="cursor: pointer; user-select: none;" title="点击重新加载歌词">暂无歌词</div>';
+    setLyricsContentHtml(html);
+    
+    setTimeout(() => {
+        const noLyricsElements = document.querySelectorAll('.no-lyrics-message');
+        noLyricsElements.forEach(element => {
+            element.addEventListener('click', refreshLyrics);
+        });
+    }, 0);
 }
 
 function clearLyricsContent() {
