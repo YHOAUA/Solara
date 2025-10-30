@@ -295,6 +295,21 @@ body.mobile-view .mobile-inline-lyrics__content > div {
     color: rgba(255, 255, 255, 0.6);
 }
 
+body.mobile-view .mobile-inline-lyrics__content .no-lyrics-message {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: clamp(0.8rem, 3.5vw, 0.95rem);
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+body.mobile-view .mobile-inline-lyrics__content .no-lyrics-message:hover {
+    color: var(--primary-color, #53a3f1);
+    transform: scale(1.02);
+}
+
+body.mobile-view .mobile-inline-lyrics__content .no-lyrics-message:active {
+    transform: scale(0.98);
+}
+
 body.mobile-view .mobile-inline-lyrics__content div[data-index] {
     text-align: center;
     font-size: clamp(0.82rem, 3.8vw, 0.98rem);

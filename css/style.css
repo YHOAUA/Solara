@@ -1343,6 +1343,22 @@ html.mobile-view .playlist-label {
 .lyrics.empty[data-placeholder="message"] .lyrics-scroll::before {
     content: none;
 }
+
+.no-lyrics-message {
+    color: var(--text-secondary-color);
+    font-size: 0.9em;
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.no-lyrics-message:hover {
+    color: var(--primary-color);
+    transform: scale(1.02);
+}
+
+.no-lyrics-message:active {
+    transform: scale(0.98);
+}
+
 .lyrics .current { 
     color: var(--lyrics-highlight-text);
     font-weight: 600;
