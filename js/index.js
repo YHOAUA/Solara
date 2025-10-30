@@ -277,9 +277,9 @@ const PLACEHOLDER_HTML = `<div class="placeholder"><i class="fas fa-music"></i><
 const paletteCache = new Map();
 const PALETTE_STORAGE_KEY = "paletteCache.v1";
 let paletteAbortController = null;
-const BACKGROUND_TRANSITION_DURATION = 850;
+const BACKGROUND_TRANSITION_DURATION = 600;
 let backgroundTransitionTimer = null;
-const PALETTE_APPLY_DELAY = 140;
+const PALETTE_APPLY_DELAY = 80;
 let pendingPaletteTimer = null;
 let deferredPaletteHandle = null;
 let deferredPaletteType = "";
@@ -2529,7 +2529,6 @@ async function updateDynamicBackground(imageUrl) {
     const requestId = paletteRequestId;
 
     if (!imageUrl) {
-        resetDynamicBackground();
         return;
     }
 
@@ -2542,12 +2541,14 @@ async function updateDynamicBackground(imageUrl) {
         const cached = paletteCache.get(imageUrl);
         paletteCache.delete(imageUrl);
         paletteCache.set(imageUrl, cached);
-        queuePaletteApplication(cached, imageUrl);
+        state.dynamicPalette = cached;
+        state.currentPaletteImage = imageUrl;
+        applyDynamicGradient({ immediate: false });
         return;
     }
 
     if (state.currentPaletteImage === imageUrl && state.dynamicPalette) {
-        queuePaletteApplication(state.dynamicPalette, imageUrl);
+        applyDynamicGradient({ immediate: false });
         return;
     }
 
@@ -2564,15 +2565,14 @@ async function updateDynamicBackground(imageUrl) {
         if (requestId !== paletteRequestId) {
             return;
         }
-        queuePaletteApplication(palette, imageUrl);
+        state.dynamicPalette = palette;
+        state.currentPaletteImage = imageUrl;
+        applyDynamicGradient({ immediate: false });
     } catch (error) {
         if (error?.name === "AbortError") {
             return;
         }
         console.warn("获取动态背景失败:", error);
-        if (requestId === paletteRequestId) {
-            resetDynamicBackground();
-        }
     } finally {
         if (controller && paletteAbortController === controller) {
             paletteAbortController = null;
@@ -4581,21 +4581,94 @@ async function playSong(song, options = {}) {
     const normalizedOptions = options && typeof options === "object" ? options : {};
     const { autoplay = true, startTime = 0, preserveProgress = false, allowKuwoFallback = false } = normalizedOptions;
 
-    window.clearTimeout(pendingPaletteTimer);
-    state.audioReadyForPalette = false;
-    state.pendingPaletteData = null;
-    state.pendingPaletteImage = null;
-    state.pendingPaletteImmediate = false;
-    state.pendingPaletteReady = false;
+    // 保留之前的调色板状态，避免视觉跳跃
+    const previousPalette = state.dynamicPalette;
+    const previousImage = state.currentPaletteImage;
+
+    // 立即更新歌曲信息（但不清除封面）
+    state.currentSong = song;
+    dom.currentSongTitle.textContent = song.name;
+    updateMobileToolbarTitle();
+    const artistText = Array.isArray(song.artist) ? song.artist.join(', ') : (song.artist || '未知艺术家');
+    dom.currentSongArtist.textContent = artistText;
+
+    const songTitleForTab = typeof song.name === "string" ? song.name.trim() : "";
+    const artistTitleForTab = typeof artistText === "string" ? artistText.trim() : "";
+    const titleParts = [];
+    if (songTitleForTab) {
+        titleParts.push(songTitleForTab);
+    }
+    if (artistTitleForTab) {
+        titleParts.push(artistTitleForTab);
+    }
+    setTabTitleBase(titleParts.join(" - "));
 
     try {
-        updateCurrentSongInfo(song, { loadArtwork: false });
-
         const quality = state.playbackQuality || '320';
         const audioUrl = API.getSongUrl(song, quality);
         debugLog(`获取音频URL: ${audioUrl}`);
 
-        const audioData = await API.fetchJson(audioUrl);
+        // 并行获取音频数据和准备UI
+        const audioDataPromise = API.fetchJson(audioUrl);
+        
+        // 预加载封面图片（不阻塞音频加载）
+        const preloadArtwork = () => {
+            if (song.pic_id) {
+                const picUrl = API.getPicUrl(song);
+                API.fetchJson(picUrl)
+                    .then(data => {
+                        if (!data || !data.url || state.currentSong !== song) {
+                            return;
+                        }
+                        const img = new Image();
+                        const imageUrl = preferHttpsUrl(data.url);
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => {
+                            if (state.currentSong !== song) {
+                                return;
+                            }
+                            setAlbumCoverImage(imageUrl);
+                            
+                            // 检查是否有缓存的调色板，如果有则立即应用
+                            const shouldApplyImmediately = paletteCache.has(imageUrl);
+                            if (shouldApplyImmediately) {
+                                const cached = paletteCache.get(imageUrl);
+                                paletteCache.delete(imageUrl);
+                                paletteCache.set(imageUrl, cached);
+                                state.dynamicPalette = cached;
+                                state.currentPaletteImage = imageUrl;
+                                applyDynamicGradient({ immediate: false });
+                            } else {
+                                // 异步获取调色板，不阻塞
+                                updateDynamicBackground(imageUrl);
+                            }
+                        };
+                        img.onerror = () => {
+                            if (state.currentSong === song && !previousImage) {
+                                showAlbumCoverPlaceholder();
+                            }
+                        };
+                        img.src = imageUrl;
+                    })
+                    .catch(error => {
+                        console.error("加载封面失败:", error);
+                        if (state.currentSong === song && !previousImage) {
+                            showAlbumCoverPlaceholder();
+                        }
+                    });
+            } else if (!previousImage) {
+                showAlbumCoverPlaceholder();
+            }
+        };
+
+        // 立即开始预加载封面（异步）
+        if (typeof window.requestIdleCallback === "function") {
+            window.requestIdleCallback(preloadArtwork, { timeout: 100 });
+        } else {
+            setTimeout(preloadArtwork, 0);
+        }
+
+        const audioData = await audioDataPromise;
 
         if (!audioData || !audioData.url) {
             throw new Error('无法获取音频播放地址');
@@ -4616,7 +4689,6 @@ async function playSong(song, options = {}) {
             debugLog(`音频地址由 HTTP 升级为 HTTPS: ${preferredAudioUrl}`);
         }
 
-        state.currentSong = song;
         state.currentAudioUrl = null;
 
         dom.audioPlayer.pause();
@@ -4692,7 +4764,8 @@ async function playSong(song, options = {}) {
             updatePlayPauseButton();
         }
 
-        scheduleDeferredSongAssets(song, playPromise);
+        // 异步加载歌词，不阻塞播放
+        scheduleDeferredLyrics(song, playPromise);
 
         debugLog(`开始播放: ${song.name} @${quality}`);
     } catch (error) {
@@ -4719,6 +4792,39 @@ async function playSong(song, options = {}) {
         throw error;
     } finally {
         savePlayerState();
+    }
+}
+
+function scheduleDeferredLyrics(song, playPromise) {
+    const run = () => {
+        if (state.currentSong !== song) {
+            return;
+        }
+
+        loadLyrics(song);
+    };
+
+    const kickoff = () => {
+        if (state.currentSong !== song) {
+            return;
+        }
+
+        if (typeof window.requestIdleCallback === "function") {
+            window.requestIdleCallback(() => {
+                if (state.currentSong !== song) {
+                    return;
+                }
+                run();
+            }, { timeout: 300 });
+        } else {
+            setTimeout(run, 50);
+        }
+    };
+
+    if (playPromise && typeof playPromise.finally === "function") {
+        playPromise.finally(kickoff);
+    } else {
+        kickoff();
     }
 }
 
