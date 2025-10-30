@@ -132,7 +132,7 @@ body {
 .background-stage__layer--transition {
     background-image: var(--bg-gradient-next);
     opacity: 0;
-    transition: opacity 0.85s ease;
+    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body.background-transitioning .background-stage__layer--transition {
@@ -627,8 +627,9 @@ body.background-transitioning .background-stage__layer--transition {
     justify-content: center;
     margin-bottom: 8px;
     box-shadow: 0 26px 48px rgba(var(--primary-rgb), 0.22);
-    transition: all 0.3s ease;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
     overflow: hidden;
+    position: relative;
 }
 
 .album-cover img {
@@ -636,6 +637,7 @@ body.background-transitioning .background-stage__layer--transition {
     height: 100%;
     object-fit: cover;
     border-radius: 24px;
+    transition: opacity 0.25s ease-in-out;
 }
 
 .album-cover.loading {
