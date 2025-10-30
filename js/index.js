@@ -4579,7 +4579,7 @@ async function findKuwoFallbackSong(originalSong) {
 
 async function playSong(song, options = {}) {
     const normalizedOptions = options && typeof options === "object" ? options : {};
-    const { autoplay = true, startTime = 0, preserveProgress = false, allowKuwoFallback = true } = normalizedOptions;
+    const { autoplay = true, startTime = 0, preserveProgress = false, allowKuwoFallback = false } = normalizedOptions;
 
     window.clearTimeout(pendingPaletteTimer);
     state.audioReadyForPalette = false;
