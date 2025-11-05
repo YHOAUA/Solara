@@ -582,6 +582,12 @@ function getPlaylistSyncPayload() {
         currentPlaybackTime: Number.isFinite(state.currentPlaybackTime) && state.currentPlaybackTime >= 0
             ? state.currentPlaybackTime
             : 0,
+        playlists: Array.isArray(state.playlists) ? state.playlists.map(playlist => ({
+            id: playlist.id,
+            name: playlist.name,
+            songs: Array.isArray(playlist.songs) ? playlist.songs : [],
+        })) : [],
+        activePlaylistId: typeof state.activePlaylistId === "string" ? state.activePlaylistId : null,
     };
 
     if (Number.isFinite(state.volume)) {
@@ -944,6 +950,14 @@ function normalizeRemotePlaylist(rawValue) {
         ? value.currentPlaybackTime
         : 0;
 
+    const playlists = Array.isArray(value.playlists) && value.playlists.length > 0
+        ? value.playlists.map(playlist => normalizePlaylistEntry(playlist))
+        : null;
+
+    const activePlaylistId = typeof value.activePlaylistId === "string" && value.activePlaylistId.trim()
+        ? value.activePlaylistId.trim()
+        : null;
+
     const normalized = {
         songs,
         currentTrackIndex,
@@ -952,6 +966,8 @@ function normalizeRemotePlaylist(rawValue) {
         currentPlaylist,
         currentSong,
         currentPlaybackTime,
+        playlists,
+        activePlaylistId,
     };
 
     if (typeof value.volume === "number" && Number.isFinite(value.volume)) {
@@ -965,7 +981,21 @@ function applyRemotePlaylist(payload, snapshotString) {
     const normalized = normalizeRemotePlaylist(payload);
     isRestoringPlaylistFromRemote = true;
     try {
-        setActivePlaylistSongs(normalized.songs);
+        if (normalized.playlists !== null && Array.isArray(normalized.playlists) && normalized.playlists.length > 0) {
+            state.playlists = normalized.playlists;
+            if (normalized.activePlaylistId && state.playlists.some(pl => pl.id === normalized.activePlaylistId)) {
+                state.activePlaylistId = normalized.activePlaylistId;
+                const activePlaylist = state.playlists.find(pl => pl.id === normalized.activePlaylistId);
+                if (activePlaylist) {
+                    state.playlistSongs = activePlaylist.songs;
+                }
+            } else if (state.playlists.length > 0) {
+                state.activePlaylistId = state.playlists[0].id;
+                state.playlistSongs = state.playlists[0].songs;
+            }
+        } else {
+            setActivePlaylistSongs(normalized.songs);
+        }
         state.currentTrackIndex = normalized.currentTrackIndex;
         state.playMode = normalized.playMode;
         state.playbackQuality = normalized.playbackQuality;
