@@ -14,6 +14,12 @@ interface PlaylistPayload {
   currentSong: Record<string, unknown> | null;
   currentPlaybackTime: number;
   volume?: number;
+  playlists?: Array<{
+    id: string;
+    name: string;
+    songs: unknown[];
+  }>;
+  activePlaylistId?: string | null;
 }
 
 interface StoredPlaylistRecord {
@@ -102,6 +108,27 @@ function clampNumber(value: number, min: number, max: number): number {
   return value;
 }
 
+function normalizePlaylists(value: unknown): Array<{
+  id: string;
+  name: string;
+  songs: unknown[];
+}> | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  
+  const normalized = value
+    .filter(item => isPlainObject(item))
+    .map(item => ({
+      id: typeof item.id === "string" && item.id.trim() ? item.id.trim() : "",
+      name: typeof item.name === "string" ? item.name.trim() : "",
+      songs: sanitizeSongs(item.songs),
+    }))
+    .filter(item => item.id.length > 0 && item.name.length > 0);
+  
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 function normalizePlaylistPayload(value: unknown): PlaylistPayload {
   const data = isPlainObject(value) ? value : {};
   const songs = sanitizeSongs(data.songs);
@@ -139,6 +166,12 @@ function normalizePlaylistPayload(value: unknown): PlaylistPayload {
     ? clampNumber(data.volume, 0, 1)
     : undefined;
 
+  const playlists = normalizePlaylists(data.playlists);
+
+  const activePlaylistId = typeof data.activePlaylistId === "string" && data.activePlaylistId.trim()
+    ? data.activePlaylistId.trim()
+    : null;
+
   const payload: PlaylistPayload = {
     songs,
     currentTrackIndex,
@@ -151,6 +184,14 @@ function normalizePlaylistPayload(value: unknown): PlaylistPayload {
 
   if (volume !== undefined) {
     payload.volume = volume;
+  }
+
+  if (playlists !== undefined) {
+    payload.playlists = playlists;
+  }
+
+  if (activePlaylistId !== null) {
+    payload.activePlaylistId = activePlaylistId;
   }
 
   return payload;
