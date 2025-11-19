@@ -54,6 +54,12 @@ const dom = {
     mobilePanelTitle: document.getElementById("mobilePanelTitle"),
     mobileQueueToggle: document.getElementById("mobileQueueToggle"),
     searchArea: document.getElementById("searchArea"),
+    insightPanel: document.getElementById("insightPanel"),
+    sourceStatusValue: document.getElementById("sourceStatusValue"),
+    playlistStatusCount: document.getElementById("playlistStatusCount"),
+    playlistStatusName: document.getElementById("playlistStatusName"),
+    qualityStatusValue: document.getElementById("qualityStatusValue"),
+    qualityStatusMeta: document.getElementById("qualityStatusMeta"),
     playlistSyncStatus: document.getElementById("playlistSyncStatus"),
     playlistSyncBtn: document.getElementById("playlistSyncBtn"),
 };
@@ -1697,20 +1703,39 @@ function addSongsToPlaylist(songs, playlistId = state.activePlaylistId) {
     return { added, duplicates, playlist };
 }
 
-function updatePlaylistSelectorLabel() {
-    if (!dom.playlistSelectorLabel || !dom.playlistSelectorButton) {
+function updatePlaylistInsightChip(playlistOverride) {
+    if (!dom.playlistStatusCount && !dom.playlistStatusName) {
         return;
     }
+    const playlist = playlistOverride || getActivePlaylist();
+    const songs = playlist && Array.isArray(playlist.songs) ? playlist.songs : [];
+    const total = songs.length;
+    if (dom.playlistStatusCount) {
+        dom.playlistStatusCount.textContent = total > 0 ? `${total} 首` : "暂无歌曲";
+        dom.playlistStatusCount.dataset.count = String(total);
+        dom.playlistStatusCount.classList.toggle("is-empty", total === 0);
+    }
+    if (dom.playlistStatusName) {
+        const name = playlist ? playlist.name : DEFAULT_PLAYLIST_NAME;
+        dom.playlistStatusName.textContent = name || DEFAULT_PLAYLIST_NAME;
+    }
+}
+
+function updatePlaylistSelectorLabel() {
     const playlist = getActivePlaylist();
     const name = playlist ? playlist.name : DEFAULT_PLAYLIST_NAME;
-    dom.playlistSelectorLabel.textContent = name;
-    dom.playlistSelectorButton.setAttribute("aria-expanded", state.playlistMenuOpen ? "true" : "false");
-    if (playlist) {
-        dom.playlistSelectorButton.dataset.playlistId = playlist.id;
-        dom.playlistSelectorButton.title = `当前歌单：${name}`;
-    } else {
-        dom.playlistSelectorButton.dataset.playlistId = "";
-        dom.playlistSelectorButton.title = "选择歌单";
+    if (dom.playlistSelectorLabel) {
+        dom.playlistSelectorLabel.textContent = name;
+    }
+    if (dom.playlistSelectorButton) {
+        dom.playlistSelectorButton.setAttribute("aria-expanded", state.playlistMenuOpen ? "true" : "false");
+        if (playlist) {
+            dom.playlistSelectorButton.dataset.playlistId = playlist.id;
+            dom.playlistSelectorButton.title = `当前歌单：${name}`;
+        } else {
+            dom.playlistSelectorButton.dataset.playlistId = "";
+            dom.playlistSelectorButton.title = "选择歌单";
+        }
     }
     if (dom.deletePlaylistBtn) {
         const disableDelete = state.playlists.length <= 1;
@@ -1718,6 +1743,7 @@ function updatePlaylistSelectorLabel() {
         dom.deletePlaylistBtn.setAttribute("aria-disabled", disableDelete ? "true" : "false");
         dom.deletePlaylistBtn.title = disableDelete ? "至少保留一个歌单" : "删除当前歌单";
     }
+    updatePlaylistInsightChip(playlist);
 }
 
 function buildPlaylistMenu() {
@@ -2920,14 +2946,33 @@ function buildSourceMenu() {
     }
 }
 
+function updateSourceInsightChip(option) {
+    if (!dom.sourceStatusValue) {
+        return;
+    }
+    const resolved = option || SOURCE_OPTIONS.find(item => item.value === state.searchSource) || SOURCE_OPTIONS[0];
+    if (!resolved) {
+        return;
+    }
+    dom.sourceStatusValue.textContent = resolved.label;
+    dom.sourceStatusValue.dataset.source = resolved.value;
+}
+
 function updateSourceLabel() {
     const option = SOURCE_OPTIONS.find(item => item.value === state.searchSource) || SOURCE_OPTIONS[0];
-    if (!option || !dom.sourceSelectLabel || !dom.sourceSelectButton) return;
-    dom.sourceSelectLabel.textContent = option.label;
-    dom.sourceSelectButton.dataset.source = option.value;
-    dom.sourceSelectButton.setAttribute("aria-expanded", state.sourceMenuOpen ? "true" : "false");
-    dom.sourceSelectButton.setAttribute("aria-label", `当前音源：${option.label}，点击切换音源`);
-    dom.sourceSelectButton.setAttribute("title", `音源：${option.label}`);
+    if (!option) {
+        return;
+    }
+    if (dom.sourceSelectLabel) {
+        dom.sourceSelectLabel.textContent = option.label;
+    }
+    if (dom.sourceSelectButton) {
+        dom.sourceSelectButton.dataset.source = option.value;
+        dom.sourceSelectButton.setAttribute("aria-expanded", state.sourceMenuOpen ? "true" : "false");
+        dom.sourceSelectButton.setAttribute("aria-label", `当前音源：${option.label}，点击切换音源`);
+        dom.sourceSelectButton.setAttribute("title", `音源：${option.label}`);
+    }
+    updateSourceInsightChip(option);
 }
 
 function updateSourceMenuPosition() {
@@ -3085,6 +3130,23 @@ function getQualityMenuAnchor() {
     return fallback;
 }
 
+function updateQualityInsightChip(option) {
+    if (!dom.qualityStatusValue && !dom.qualityStatusMeta) {
+        return;
+    }
+    const resolved = option || QUALITY_OPTIONS.find(item => item.value === state.playbackQuality) || QUALITY_OPTIONS[0];
+    if (!resolved) {
+        return;
+    }
+    if (dom.qualityStatusValue) {
+        dom.qualityStatusValue.textContent = resolved.label;
+        dom.qualityStatusValue.dataset.quality = resolved.value;
+    }
+    if (dom.qualityStatusMeta) {
+        dom.qualityStatusMeta.textContent = resolved.description;
+    }
+}
+
 function updateQualityLabel() {
     const option = QUALITY_OPTIONS.find(item => item.value === state.playbackQuality) || QUALITY_OPTIONS[0];
     if (!option) return;
@@ -3096,6 +3158,7 @@ function updateQualityLabel() {
     if (dom.mobileQualityToggle) {
         dom.mobileQualityToggle.title = `音质: ${option.label} (${option.description})`;
     }
+    updateQualityInsightChip(option);
 }
 
 function togglePlayerQualityMenu(event) {

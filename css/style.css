@@ -154,10 +154,11 @@ body.background-transitioning .background-stage__layer--transition {
     display: grid;
     grid-template-areas:
         "header header header"
+        "insights insights insights"
         "search search search"
         "cover playlist lyrics"
         "controls controls controls";
-    grid-template-rows: auto auto 1fr 80px;
+    grid-template-rows: auto auto auto 1fr 80px;
     grid-template-columns: 300px 1fr 1fr;
     gap: clamp(18px, 2vw, 24px);
     transition: background 0.5s, box-shadow 0.5s, border-color 0.5s;
@@ -171,9 +172,11 @@ body.background-transitioning .background-stage__layer--transition {
 .container.search-mode {
     grid-template-areas: 
         "header header header"
+        "insights insights insights"
         "search search search"
         "search search search"
         "controls controls controls";
+    grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) 80px;
 }
 
 .header {
@@ -231,6 +234,176 @@ body.background-transitioning .background-stage__layer--transition {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+}
+
+/* 状态速览面板 */
+.insight-panel {
+    grid-area: insights;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: clamp(12px, 2vw, 20px);
+    padding: 0 clamp(4px, 1vw, 10px);
+    align-self: stretch;
+}
+
+.insight-chip {
+    position: relative;
+    border-radius: 24px;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(232, 232, 240, 0.9);
+    box-shadow: 0 18px 36px rgba(15, 15, 35, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    overflow: hidden;
+    isolation: isolate;
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    opacity: 0;
+    transform: translateY(12px);
+    animation: insightFade 0.45s ease forwards;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.insight-chip:nth-child(2) { animation-delay: 0.05s; }
+.insight-chip:nth-child(3) { animation-delay: 0.1s; }
+
+.insight-chip::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14), transparent 65%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.insight-chip:hover,
+.insight-chip:focus-within {
+    box-shadow: 0 24px 44px rgba(var(--primary-rgb), 0.18);
+    transform: translateY(-2px);
+}
+
+.insight-chip:hover::after,
+.insight-chip:focus-within::after {
+    opacity: 1;
+}
+
+.insight-chip__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.2);
+}
+
+.insight-chip--source .insight-chip__icon {
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.18), rgba(var(--primary-rgb), 0.05));
+}
+
+.insight-chip--playlist .insight-chip__icon {
+    background: linear-gradient(135deg, rgba(50, 215, 75, 0.22), rgba(50, 215, 75, 0.08));
+    color: var(--success-color);
+}
+
+.insight-chip--quality .insight-chip__icon {
+    background: linear-gradient(135deg, rgba(255, 159, 10, 0.18), rgba(255, 149, 0, 0.08));
+    color: #ff9500;
+}
+
+.insight-chip__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.insight-chip__label {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary-color);
+}
+
+.insight-chip__value {
+    font-size: 1.18rem;
+    font-weight: 600;
+    color: var(--text-color);
+    line-height: 1.2;
+}
+
+.insight-chip__value.is-empty {
+    color: var(--text-secondary-color);
+}
+
+.insight-chip__meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary-color);
+}
+
+.dark-mode .insight-chip {
+    background: rgba(15, 15, 25, 0.78);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.45);
+}
+
+.dark-mode .insight-chip::after {
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.22), transparent 65%);
+}
+
+.dark-mode .insight-chip__icon {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.dark-mode .insight-chip__label,
+.dark-mode .insight-chip__meta {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.dark-mode .insight-chip__value {
+    color: #ffffff;
+}
+
+@keyframes insightFade {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .insight-chip {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (max-width: 1080px) {
+    .insight-panel {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .insight-panel {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
 }
 
 /* 搜索区域样式 - 增强动效 */

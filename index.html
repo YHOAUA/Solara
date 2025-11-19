@@ -91,6 +91,38 @@
             </div>
         </div>
 
+        <div class="insight-panel" id="insightPanel" aria-live="polite">
+            <div class="insight-chip insight-chip--source">
+                <div class="insight-chip__icon" aria-hidden="true">
+                    <i class="fas fa-compass"></i>
+                </div>
+                <div class="insight-chip__content">
+                    <div class="insight-chip__label">当前音源</div>
+                    <div class="insight-chip__value" id="sourceStatusValue">网易云音乐</div>
+                </div>
+            </div>
+            <div class="insight-chip insight-chip--playlist">
+                <div class="insight-chip__icon" aria-hidden="true">
+                    <i class="fas fa-list-ul"></i>
+                </div>
+                <div class="insight-chip__content">
+                    <div class="insight-chip__label">播放列表</div>
+                    <div class="insight-chip__value" id="playlistStatusCount">0 首</div>
+                    <div class="insight-chip__meta" id="playlistStatusName">默认歌单</div>
+                </div>
+            </div>
+            <div class="insight-chip insight-chip--quality">
+                <div class="insight-chip__icon" aria-hidden="true">
+                    <i class="fas fa-sliders"></i>
+                </div>
+                <div class="insight-chip__content">
+                    <div class="insight-chip__label">音频质量</div>
+                    <div class="insight-chip__value" id="qualityStatusValue">高品音质</div>
+                    <div class="insight-chip__meta" id="qualityStatusMeta">192 kbps</div>
+                </div>
+            </div>
+        </div>
+
         <div class="search-area" id="searchArea">
             <button type="button" class="mobile-close-btn" id="mobileSearchClose" aria-label="关闭搜索">
                 <i class="fas fa-times" aria-hidden="true"></i>
