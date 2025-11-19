@@ -152,6 +152,64 @@ body.mobile-view .mobile-toolbar__button:hover {
     border-color: rgba(255, 255, 255, 0.28);
 }
 
+body.mobile-view .insight-panel {
+    width: 100%;
+    padding: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(10px, 3vw, 18px);
+}
+
+body.mobile-view .insight-chip {
+    padding: 12px 14px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+    animation: none;
+    opacity: 1;
+    transform: none;
+}
+
+body.mobile-view .insight-chip::after {
+    display: none;
+}
+
+body.mobile-view .insight-chip__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-size: 0.95rem;
+    box-shadow: none;
+}
+
+body.mobile-view .insight-chip__label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+body.mobile-view .insight-chip__value {
+    font-size: 1rem;
+    color: #ffffff;
+}
+
+body.mobile-view .insight-chip__value.is-empty {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+body.mobile-view .insight-chip__meta {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+@media screen and (max-width: 420px) {
+    body.mobile-view .insight-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
 body.mobile-view .main-content {
     display: flex;
     flex-direction: column;
